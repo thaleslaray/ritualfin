@@ -7,71 +7,132 @@ import {
   CheckCircle2, 
   Clock, 
   AlertCircle,
-  X,
-  RefreshCw
+  RefreshCw,
+  Inbox
 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-
-interface UploadedFile {
-  id: string;
-  name: string;
-  type: "print" | "ofx";
-  status: "processing" | "completed" | "error";
-  transactionsFound?: number;
-  uploadedAt: string;
-}
-
-const mockUploads: UploadedFile[] = [
-  { id: "1", name: "nubank_dezembro.png", type: "print", status: "completed", transactionsFound: 12, uploadedAt: "há 2 dias" },
-  { id: "2", name: "inter_dezembro.ofx", type: "ofx", status: "completed", transactionsFound: 8, uploadedAt: "há 2 dias" },
-];
+import { useImports, useCreateImport, useUploadFile, useUpdateImportStatus } from "@/hooks/useImports";
+import { useCurrentMonth } from "@/hooks/useMonths";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Uploads = () => {
-  const [isDragging, setIsDragging] = useState(false);
-  const [uploads, setUploads] = useState<UploadedFile[]>(mockUploads);
+  const [isDraggingPrint, setIsDraggingPrint] = useState(false);
+  const [isDraggingOfx, setIsDraggingOfx] = useState(false);
+  
+  const { user } = useAuth();
+  const { data: currentMonth, isLoading: monthLoading } = useCurrentMonth();
+  const { data: imports, isLoading: importsLoading } = useImports();
+  const createImport = useCreateImport();
+  const uploadFile = useUploadFile();
+  const updateStatus = useUpdateImportStatus();
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
+  const handleFiles = useCallback(async (files: File[], type: "print" | "ofx") => {
+    if (!currentMonth || !user) {
+      toast.error("Erro", { description: "Mês atual não encontrado" });
+      return;
+    }
+
+    // Get couple_id from profile
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("couple_id")
+      .eq("id", user.id)
+      .single();
+
+    if (!profile?.couple_id) {
+      toast.error("Erro", { description: "Perfil não encontrado" });
+      return;
+    }
+
+    for (const file of files) {
+      try {
+        // Create import record first
+        const importRecord = await createImport.mutateAsync({
+          type,
+          file_name: file.name,
+          status: "processing",
+        });
+
+        toast.success(`Enviando ${file.name}`, { description: "Processando..." });
+
+        // Upload file to storage
+        const uploadResult = await uploadFile.mutateAsync({
+          file,
+          coupleId: profile.couple_id,
+          type,
+        });
+
+        // Update import with file URL
+        await supabase
+          .from("imports")
+          .update({ file_url: uploadResult.path })
+          .eq("id", importRecord.id);
+
+        // Call processing edge function
+        const functionName = type === "print" ? "process-print" : "process-ofx";
+        
+        const { data, error } = await supabase.functions.invoke(functionName, {
+          body: {
+            importId: importRecord.id,
+            fileUrl: uploadResult.path,
+            monthId: currentMonth.id,
+            coupleId: profile.couple_id,
+          },
+        });
+
+        if (error) {
+          console.error("Processing error:", error);
+          await updateStatus.mutateAsync({
+            id: importRecord.id,
+            status: "failed",
+            error_message: error.message,
+          });
+          toast.error(`Erro ao processar ${file.name}`, { description: error.message });
+        } else if (data?.success) {
+          toast.success(`${file.name} processado!`, {
+            description: `${data.transactionsCreated} novas transações encontradas`,
+          });
+        } else if (data?.error) {
+          toast.error(`Erro: ${data.message || data.error}`);
+        }
+      } catch (error) {
+        console.error("Upload error:", error);
+        toast.error(`Erro ao enviar ${file.name}`, {
+          description: error instanceof Error ? error.message : "Erro desconhecido",
+        });
+      }
+    }
+  }, [currentMonth, user, createImport, uploadFile, updateStatus]);
+
+  const handleDropPrint = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    setIsDragging(false);
-    
-    const files = Array.from(e.dataTransfer.files);
-    handleFiles(files);
-  }, []);
+    setIsDraggingPrint(false);
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith("image/"));
+    if (files.length > 0) handleFiles(files, "print");
+  }, [handleFiles]);
 
-  const handleFiles = (files: File[]) => {
-    const newUploads: UploadedFile[] = files.map((file, index) => ({
-      id: `new-${Date.now()}-${index}`,
-      name: file.name,
-      type: file.name.endsWith(".ofx") ? "ofx" : "print",
-      status: "processing",
-      uploadedAt: "agora",
-    }));
+  const handleDropOfx = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingOfx(false);
+    const files = Array.from(e.dataTransfer.files).filter(f => f.name.endsWith(".ofx"));
+    if (files.length > 0) handleFiles(files, "ofx");
+  }, [handleFiles]);
 
-    setUploads(prev => [...newUploads, ...prev]);
-    
-    toast.success(`${files.length} arquivo(s) enviado(s)`, {
-      description: "Processando transações...",
-    });
-
-    // Simulate processing
-    setTimeout(() => {
-      setUploads(prev => prev.map(u => 
-        newUploads.find(n => n.id === u.id)
-          ? { ...u, status: "completed", transactionsFound: Math.floor(Math.random() * 15) + 3 }
-          : u
-      ));
-      toast.success("Processamento concluído!", {
-        description: "Novas transações aguardam categorização.",
-      });
-    }, 3000);
+  const handleFileInputPrint = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      handleFiles(Array.from(e.target.files), "print");
+    }
   };
 
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileInputOfx = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      handleFiles(Array.from(e.target.files));
+      handleFiles(Array.from(e.target.files), "ofx");
     }
   };
 
@@ -80,11 +141,16 @@ const Uploads = () => {
       case "completed":
         return <CheckCircle2 className="w-5 h-5 text-success" />;
       case "processing":
+      case "pending":
         return <RefreshCw className="w-5 h-5 text-primary animate-spin" />;
-      case "error":
+      case "failed":
         return <AlertCircle className="w-5 h-5 text-destructive" />;
+      default:
+        return <Clock className="w-5 h-5 text-muted-foreground" />;
     }
   };
+
+  const isLoading = monthLoading || importsLoading;
 
   return (
     <AppLayout>
@@ -123,20 +189,20 @@ const Uploads = () => {
               <CardContent>
                 <label
                   className={`relative flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
-                    isDragging
+                    isDraggingPrint
                       ? "border-primary bg-primary/5"
                       : "border-border hover:border-primary/50 hover:bg-muted/50"
                   }`}
-                  onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-                  onDragLeave={() => setIsDragging(false)}
-                  onDrop={handleDrop}
+                  onDragOver={(e) => { e.preventDefault(); setIsDraggingPrint(true); }}
+                  onDragLeave={() => setIsDraggingPrint(false)}
+                  onDrop={handleDropPrint}
                 >
                   <input
                     type="file"
                     accept="image/*"
                     multiple
                     className="hidden"
-                    onChange={handleFileInput}
+                    onChange={handleFileInputPrint}
                   />
                   <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
                     <UploadIcon className="w-8 h-8 text-primary" />
@@ -171,20 +237,20 @@ const Uploads = () => {
               <CardContent>
                 <label
                   className={`relative flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
-                    isDragging
+                    isDraggingOfx
                       ? "border-secondary bg-secondary/5"
                       : "border-border hover:border-secondary/50 hover:bg-muted/50"
                   }`}
-                  onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-                  onDragLeave={() => setIsDragging(false)}
-                  onDrop={handleDrop}
+                  onDragOver={(e) => { e.preventDefault(); setIsDraggingOfx(true); }}
+                  onDragLeave={() => setIsDraggingOfx(false)}
+                  onDrop={handleDropOfx}
                 >
                   <input
                     type="file"
                     accept=".ofx"
                     multiple
                     className="hidden"
-                    onChange={handleFileInput}
+                    onChange={handleFileInputOfx}
                   />
                   <div className="w-16 h-16 rounded-2xl bg-secondary/10 flex items-center justify-center mb-4">
                     <FileText className="w-8 h-8 text-secondary" />
@@ -215,13 +281,25 @@ const Uploads = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {uploads.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">Nenhum upload ainda</p>
+              {isLoading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-16 w-full" />
+                  ))}
+                </div>
+              ) : !imports || imports.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
+                    <Inbox className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                  <p className="text-muted-foreground mb-2">Nenhum upload ainda</p>
+                  <p className="text-sm text-muted-foreground/70">
+                    Envie prints ou arquivos OFX para começar
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {uploads.map((upload, index) => (
+                  {imports.map((upload, index) => (
                     <motion.div
                       key={upload.id}
                       className="flex items-center gap-4 p-4 rounded-xl bg-muted/50"
@@ -233,25 +311,30 @@ const Uploads = () => {
                         upload.type === "print" ? "bg-primary/10" : "bg-secondary/10"
                       }`}>
                         {upload.type === "print" ? (
-                          <Image className={`w-5 h-5 ${upload.type === "print" ? "text-primary" : "text-secondary"}`} />
+                          <Image className="w-5 h-5 text-primary" />
                         ) : (
                           <FileText className="w-5 h-5 text-secondary" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-foreground truncate">{upload.name}</p>
+                        <p className="font-medium text-foreground truncate">
+                          {upload.file_name || `${upload.type} upload`}
+                        </p>
                         <p className="text-sm text-muted-foreground">
-                          {upload.status === "completed" && upload.transactionsFound && (
-                            <span className="text-success">{upload.transactionsFound} transações encontradas</span>
+                          {upload.status === "completed" && upload.transactions_count !== null && (
+                            <span className="text-success">{upload.transactions_count} transações encontradas</span>
                           )}
-                          {upload.status === "processing" && (
+                          {(upload.status === "processing" || upload.status === "pending") && (
                             <span className="text-primary">Processando...</span>
                           )}
-                          {upload.status === "error" && (
-                            <span className="text-destructive">Erro no processamento</span>
+                          {upload.status === "failed" && (
+                            <span className="text-destructive">{upload.error_message || "Erro no processamento"}</span>
                           )}
                           <span className="mx-2">•</span>
-                          {upload.uploadedAt}
+                          {formatDistanceToNow(new Date(upload.created_at), { 
+                            addSuffix: true, 
+                            locale: ptBR 
+                          })}
                         </p>
                       </div>
                       {getStatusIcon(upload.status)}

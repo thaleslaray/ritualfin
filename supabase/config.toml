@@ -1,1 +1,7 @@
 project_id = "vhdjckcfchurjidvpqmb"
+
+[functions.process-print]
+verify_jwt = true
+
+[functions.process-ofx]
+verify_jwt = true
