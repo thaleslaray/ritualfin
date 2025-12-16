@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   Calendar, 
   Upload, 
@@ -15,19 +15,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BudgetComparisonMini } from "@/components/budget/BudgetComparison";
 import { RitualBadge } from "@/components/brand/Logo";
+import { OnboardingWizard, useOnboarding } from "@/components/onboarding/OnboardingWizard";
+import { SetupChecklist } from "@/components/onboarding/SetupChecklist";
 import { Link } from "react-router-dom";
 import { useCurrentMonth, useCategoryBudgets } from "@/hooks/useMonths";
 import { useTransactionsSummary, usePendingTransactions } from "@/hooks/useTransactions";
+import { useImports } from "@/hooks/useImports";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 const Index = () => {
+  const { showOnboarding, hasChecked, completeOnboarding, skipOnboarding } = useOnboarding();
   const { data: currentMonth, isLoading: monthLoading } = useCurrentMonth();
   const { data: categoryBudgets, isLoading: budgetsLoading } = useCategoryBudgets(currentMonth?.id);
   const summary = useTransactionsSummary(currentMonth?.id);
   const { data: pendingTransactions, isLoading: pendingLoading } = usePendingTransactions(currentMonth?.id);
+  const { data: imports } = useImports();
 
-  const isLoading = monthLoading || budgetsLoading || pendingLoading;
+  const isLoading = monthLoading || budgetsLoading || pendingLoading || !hasChecked;
 
   // Calculate month name
   const getMonthName = () => {
@@ -68,10 +73,23 @@ const Index = () => {
     );
   }
 
+  // Checklist state
+  const hasBudget = totalPlanned > 0;
+  const hasUploads = (imports?.length || 0) > 0;
+  const hasAllCategorized = pendingCount === 0 && hasUploads;
+
   // Empty state - no month created yet
   if (!currentMonth) {
     return (
       <AppLayout>
+        <AnimatePresence>
+          {showOnboarding && (
+            <OnboardingWizard 
+              onComplete={completeOnboarding} 
+              onSkip={skipOnboarding} 
+            />
+          )}
+        </AnimatePresence>
         <div className="max-w-2xl mx-auto text-center py-16">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -81,7 +99,7 @@ const Index = () => {
               <Sparkles className="w-10 h-10 text-primary" />
             </div>
             <h1 className="text-2xl font-bold text-foreground mb-3">
-              Bem-vindo ao seu primeiro mês!
+              Bem-vindos ao seu primeiro mês!
             </h1>
             <p className="text-muted-foreground mb-6">
               Comece configurando seu orçamento mensal no Ritual Dia 1. 
@@ -126,6 +144,14 @@ const Index = () => {
             </Button>
           </Link>
         </motion.div>
+
+        {/* Setup Checklist for new users */}
+        <SetupChecklist
+          hasMonth={!!currentMonth}
+          hasBudget={hasBudget}
+          hasUploads={hasUploads}
+          hasAllCategorized={hasAllCategorized}
+        />
 
         {/* Main Grid */}
         <div className="grid lg:grid-cols-3 gap-6">

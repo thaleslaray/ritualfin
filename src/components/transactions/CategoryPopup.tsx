@@ -13,14 +13,14 @@ import {
 import { Button } from "@/components/ui/button";
 
 const categories = [
-  { id: "moradia", label: "Moradia", icon: Home, color: "bg-blue-500" },
-  { id: "alimentacao", label: "Alimentação", icon: Utensils, color: "bg-orange-500" },
-  { id: "transporte", label: "Transporte", icon: Car, color: "bg-green-500" },
-  { id: "saude", label: "Saúde", icon: Heart, color: "bg-red-500" },
-  { id: "compras", label: "Compras", icon: ShoppingBag, color: "bg-purple-500" },
-  { id: "lazer", label: "Lazer", icon: Plane, color: "bg-cyan-500" },
-  { id: "tecnologia", label: "Tecnologia", icon: Smartphone, color: "bg-indigo-500" },
-  { id: "outros", label: "Outros", icon: MoreHorizontal, color: "bg-gray-500" },
+  { id: "Moradia", label: "Moradia", icon: Home, color: "bg-blue-500" },
+  { id: "Alimentação", label: "Alimentação", icon: Utensils, color: "bg-orange-500" },
+  { id: "Transporte", label: "Transporte", icon: Car, color: "bg-green-500" },
+  { id: "Saúde", label: "Saúde", icon: Heart, color: "bg-red-500" },
+  { id: "Vestuário", label: "Vestuário", icon: ShoppingBag, color: "bg-purple-500" },
+  { id: "Lazer", label: "Lazer", icon: Plane, color: "bg-cyan-500" },
+  { id: "Educação", label: "Educação", icon: Smartphone, color: "bg-indigo-500" },
+  { id: "Outros", label: "Outros", icon: MoreHorizontal, color: "bg-gray-500" },
 ];
 
 interface CategoryPopupProps {

@@ -111,8 +111,8 @@ export const BudgetComparisonMini = ({ categories }: { categories: BudgetCategor
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-sm font-medium text-foreground truncate">{info.label}</span>
-                <span className={`text-xs font-semibold ${isOverBudget ? "text-destructive" : "text-muted-foreground"}`}>
-                  {Math.round((category.actual / category.planned) * 100)}%
+              <span className={`text-xs font-semibold ${isOverBudget ? "text-destructive" : "text-muted-foreground"}`}>
+                  {category.planned > 0 ? Math.round((category.actual / category.planned) * 100) : 0}%
                 </span>
               </div>
               <div className="h-1.5 bg-muted rounded-full overflow-hidden">
