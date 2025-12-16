@@ -9,7 +9,7 @@ export interface Transaction {
   date: string;
   category?: string;
   confidence: "high" | "medium" | "low";
-  source: "print" | "ofx";
+  source: "print" | "ofx" | "manual";
   needsReview: boolean;
 }
 

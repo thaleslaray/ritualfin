@@ -7,31 +7,21 @@ import {
   CheckCircle2, 
   Clock, 
   AlertCircle,
-  X,
-  RefreshCw
+  RefreshCw,
+  Loader2
 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-
-interface UploadedFile {
-  id: string;
-  name: string;
-  type: "print" | "ofx";
-  status: "processing" | "completed" | "error";
-  transactionsFound?: number;
-  uploadedAt: string;
-}
-
-const mockUploads: UploadedFile[] = [
-  { id: "1", name: "nubank_dezembro.png", type: "print", status: "completed", transactionsFound: 12, uploadedAt: "há 2 dias" },
-  { id: "2", name: "inter_dezembro.ofx", type: "ofx", status: "completed", transactionsFound: 8, uploadedAt: "há 2 dias" },
-];
+import { useImports, useCreateImport, useUpdateImport } from "@/hooks/useImports";
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 const Uploads = () => {
   const [isDragging, setIsDragging] = useState(false);
-  const [uploads, setUploads] = useState<UploadedFile[]>(mockUploads);
+  const { data: imports, isLoading } = useImports();
+  const createImport = useCreateImport();
+  const updateImport = useUpdateImport();
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -41,32 +31,36 @@ const Uploads = () => {
     handleFiles(files);
   }, []);
 
-  const handleFiles = (files: File[]) => {
-    const newUploads: UploadedFile[] = files.map((file, index) => ({
-      id: `new-${Date.now()}-${index}`,
-      name: file.name,
-      type: file.name.endsWith(".ofx") ? "ofx" : "print",
-      status: "processing",
-      uploadedAt: "agora",
-    }));
+  const handleFiles = async (files: File[]) => {
+    for (const file of files) {
+      const type = file.name.endsWith(".ofx") ? "ofx" : "print";
+      
+      try {
+        const newImport = await createImport.mutateAsync({
+          type: type as 'print' | 'ofx',
+          file_name: file.name,
+        });
 
-    setUploads(prev => [...newUploads, ...prev]);
-    
-    toast.success(`${files.length} arquivo(s) enviado(s)`, {
-      description: "Processando transações...",
-    });
+        toast.success(`${file.name} enviado`, {
+          description: "Processando transações...",
+        });
 
-    // Simulate processing
-    setTimeout(() => {
-      setUploads(prev => prev.map(u => 
-        newUploads.find(n => n.id === u.id)
-          ? { ...u, status: "completed", transactionsFound: Math.floor(Math.random() * 15) + 3 }
-          : u
-      ));
-      toast.success("Processamento concluído!", {
-        description: "Novas transações aguardam categorização.",
-      });
-    }, 3000);
+        // Simulate processing (in real app, this would be done by an edge function)
+        setTimeout(async () => {
+          await updateImport.mutateAsync({
+            id: newImport.id,
+            status: 'completed',
+            transactions_count: Math.floor(Math.random() * 15) + 3,
+            processed_at: new Date().toISOString(),
+          });
+          toast.success("Processamento concluído!", {
+            description: "Novas transações aguardam categorização.",
+          });
+        }, 3000);
+      } catch (error) {
+        toast.error(`Erro ao enviar ${file.name}`);
+      }
+    }
   };
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -80,11 +74,24 @@ const Uploads = () => {
       case "completed":
         return <CheckCircle2 className="w-5 h-5 text-success" />;
       case "processing":
+      case "pending":
         return <RefreshCw className="w-5 h-5 text-primary animate-spin" />;
-      case "error":
+      case "failed":
         return <AlertCircle className="w-5 h-5 text-destructive" />;
+      default:
+        return null;
     }
   };
+
+  if (isLoading) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
@@ -215,13 +222,13 @@ const Uploads = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {uploads.length === 0 ? (
+              {!imports || imports.length === 0 ? (
                 <div className="text-center py-8">
                   <p className="text-muted-foreground">Nenhum upload ainda</p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {uploads.map((upload, index) => (
+                  {imports.map((upload, index) => (
                     <motion.div
                       key={upload.id}
                       className="flex items-center gap-4 p-4 rounded-xl bg-muted/50"
@@ -233,25 +240,25 @@ const Uploads = () => {
                         upload.type === "print" ? "bg-primary/10" : "bg-secondary/10"
                       }`}>
                         {upload.type === "print" ? (
-                          <Image className={`w-5 h-5 ${upload.type === "print" ? "text-primary" : "text-secondary"}`} />
+                          <Image className="w-5 h-5 text-primary" />
                         ) : (
                           <FileText className="w-5 h-5 text-secondary" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-foreground truncate">{upload.name}</p>
+                        <p className="font-medium text-foreground truncate">{upload.file_name || "Arquivo"}</p>
                         <p className="text-sm text-muted-foreground">
-                          {upload.status === "completed" && upload.transactionsFound && (
-                            <span className="text-success">{upload.transactionsFound} transações encontradas</span>
+                          {upload.status === "completed" && upload.transactions_count && (
+                            <span className="text-success">{upload.transactions_count} transações encontradas</span>
                           )}
-                          {upload.status === "processing" && (
+                          {(upload.status === "processing" || upload.status === "pending") && (
                             <span className="text-primary">Processando...</span>
                           )}
-                          {upload.status === "error" && (
-                            <span className="text-destructive">Erro no processamento</span>
+                          {upload.status === "failed" && (
+                            <span className="text-destructive">Erro: {upload.error_message || "Falha no processamento"}</span>
                           )}
                           <span className="mx-2">•</span>
-                          {upload.uploadedAt}
+                          {formatDistanceToNow(new Date(upload.created_at), { addSuffix: true, locale: ptBR })}
                         </p>
                       </div>
                       {getStatusIcon(upload.status)}
