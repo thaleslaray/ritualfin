@@ -10,11 +10,12 @@ import {
   LogOut,
   Users
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-
+import { useAuth } from "@/contexts/AuthContext";
 const settingsGroups = [
   {
     title: "Conta",
@@ -46,6 +47,32 @@ const settingsGroups = [
 ];
 
 const Settings = () => {
+  const { profile, user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/auth");
+  };
+
+  const getInitials = () => {
+    if (profile?.full_name) {
+      return profile.full_name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2);
+    }
+    return user?.email?.slice(0, 2).toUpperCase() || "??";
+  };
+
+  const displayName = profile?.full_name || user?.email || "Usuário";
+  const displayEmail = user?.email || "";
+  const memberSince = user?.created_at 
+    ? new Date(user.created_at).toLocaleDateString("pt-BR", { month: "short", year: "numeric" })
+    : "";
+
   return (
     <AppLayout>
       <div className="max-w-2xl mx-auto space-y-6">
@@ -73,13 +100,15 @@ const Settings = () => {
               <div className="flex items-center gap-4">
                 <Avatar className="w-16 h-16">
                   <AvatarFallback className="bg-primary text-primary-foreground text-xl">
-                    JM
+                    {getInitials()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-foreground text-lg">João & Maria</h3>
-                  <p className="text-sm text-muted-foreground">joao@email.com</p>
-                  <p className="text-xs text-muted-foreground mt-1">Membro desde Nov 2024</p>
+                  <h3 className="font-semibold text-foreground text-lg">{displayName}</h3>
+                  <p className="text-sm text-muted-foreground">{displayEmail}</p>
+                  {memberSince && (
+                    <p className="text-xs text-muted-foreground mt-1">Membro desde {memberSince}</p>
+                  )}
                 </div>
                 <Button variant="outline" size="sm">
                   Editar
@@ -130,7 +159,11 @@ const Settings = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
         >
-          <Button variant="outline" className="w-full gap-2 text-destructive hover:text-destructive hover:bg-destructive/10">
+          <Button 
+            variant="outline" 
+            className="w-full gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+            onClick={handleLogout}
+          >
             <LogOut className="w-5 h-5" />
             Sair da conta
           </Button>
