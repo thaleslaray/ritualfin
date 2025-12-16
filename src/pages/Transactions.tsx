@@ -1,73 +1,154 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { 
   Inbox as InboxIcon, 
-  Filter, 
   CheckCircle2, 
   AlertTriangle,
-  Search
+  Search,
+  Loader2
 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { TransactionList, Transaction } from "@/components/transactions/TransactionList";
+import { TransactionList, Transaction as TransactionUI } from "@/components/transactions/TransactionList";
 import { CategoryPopup } from "@/components/transactions/CategoryPopup";
 import { toast } from "sonner";
-
-// Sample transactions
-const mockTransactions: Transaction[] = [
-  { id: "1", merchant: "SUPERMERCADO EXTRA", amount: 234.50, date: "12 Dez", category: undefined, confidence: "low", source: "print", needsReview: true },
-  { id: "2", merchant: "UBER *TRIP", amount: 28.90, date: "11 Dez", category: "transporte", confidence: "high", source: "print", needsReview: false },
-  { id: "3", merchant: "NETFLIX.COM", amount: 55.90, date: "10 Dez", category: "lazer", confidence: "high", source: "ofx", needsReview: false },
-  { id: "4", merchant: "FARMACIA DROGASIL", amount: 89.00, date: "10 Dez", category: undefined, confidence: "medium", source: "print", needsReview: true },
-  { id: "5", merchant: "PIX RECEBIDO JOAO", amount: 500.00, date: "09 Dez", category: undefined, confidence: "low", source: "ofx", needsReview: true },
-  { id: "6", merchant: "RESTAURANTE OUTBACK", amount: 189.00, date: "08 Dez", category: "alimentacao", confidence: "high", source: "print", needsReview: false },
-  { id: "7", merchant: "AMAZON BR", amount: 156.90, date: "07 Dez", category: undefined, confidence: "medium", source: "print", needsReview: true },
-  { id: "8", merchant: "POSTO SHELL", amount: 200.00, date: "06 Dez", category: "transporte", confidence: "high", source: "ofx", needsReview: false },
-];
+import { useCurrentMonth } from "@/hooks/useMonths";
+import { 
+  useTransactions, 
+  usePendingTransactions, 
+  useCategorizeTransaction,
+  Transaction 
+} from "@/hooks/useTransactions";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 const Transactions = () => {
-  const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
+  const { data: currentMonth, isLoading: isLoadingMonth } = useCurrentMonth();
+  const { data: transactions = [], isLoading: isLoadingTransactions } = useTransactions(currentMonth?.id);
+  const { data: pendingTransactions = [] } = usePendingTransactions(currentMonth?.id);
+  const categorizeTransaction = useCategorizeTransaction();
+  
   const [filter, setFilter] = useState<"all" | "pending">("all");
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // Ref for undo functionality
+  const undoRef = useRef<{ id: string; category: string | null; isInternal: boolean } | null>(null);
 
-  const filteredTransactions = transactions.filter(t => {
-    const matchesFilter = filter === "all" || (filter === "pending" && t.needsReview);
-    const matchesSearch = t.merchant.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesFilter && matchesSearch;
+  const isLoading = isLoadingMonth || isLoadingTransactions;
+
+  // Map backend transactions to UI format
+  const mapToUI = (t: Transaction): TransactionUI => ({
+    id: t.id,
+    merchant: t.merchant,
+    amount: Number(t.amount),
+    date: format(new Date(t.transaction_date), "dd MMM", { locale: ptBR }),
+    category: t.category || undefined,
+    confidence: t.confidence,
+    source: t.source === "manual" ? "print" : t.source,
+    needsReview: t.needs_review,
   });
 
-  const pendingCount = transactions.filter(t => t.needsReview).length;
+  const displayTransactions = filter === "pending" 
+    ? pendingTransactions.map(mapToUI)
+    : transactions.map(mapToUI);
+
+  const filteredTransactions = displayTransactions.filter(t => 
+    t.merchant.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const pendingCount = pendingTransactions.length;
 
   const handleCategorySelect = (categoryId: string) => {
     if (!selectedTransaction) return;
 
-    setTransactions(prev => prev.map(t => 
-      t.id === selectedTransaction.id 
-        ? { ...t, category: categoryId, needsReview: false, confidence: "high" as const }
-        : t
-    ));
+    const isInternalTransfer = categoryId === "interno";
+    const previousCategory = selectedTransaction.category;
+    const previousIsInternal = selectedTransaction.is_internal_transfer;
+    
+    // Store for undo
+    undoRef.current = {
+      id: selectedTransaction.id,
+      category: previousCategory,
+      isInternal: previousIsInternal,
+    };
 
-    toast.success("Transação categorizada!", {
-      description: categoryId === "interno" 
-        ? "Marcada como movimentação interna" 
-        : `Categoria: ${categoryId}`,
-      action: {
-        label: "Desfazer",
-        onClick: () => {
-          setTransactions(prev => prev.map(t => 
-            t.id === selectedTransaction.id 
-              ? { ...t, category: undefined, needsReview: true, confidence: "low" as const }
-              : t
-          ));
-        },
+    categorizeTransaction.mutate(
+      {
+        transactionId: selectedTransaction.id,
+        category: isInternalTransfer ? null : categoryId,
+        isInternalTransfer,
       },
-    });
+      {
+        onSuccess: () => {
+          toast.success("Transação categorizada!", {
+            description: isInternalTransfer 
+              ? "Marcada como movimentação interna" 
+              : `Categoria: ${categoryId}`,
+            action: {
+              label: "Desfazer",
+              onClick: () => {
+                if (undoRef.current) {
+                  categorizeTransaction.mutate({
+                    transactionId: undoRef.current.id,
+                    category: undoRef.current.category,
+                    isInternalTransfer: undoRef.current.isInternal,
+                  });
+                }
+              },
+            },
+            duration: 5000,
+          });
+        },
+      }
+    );
 
     setSelectedTransaction(null);
   };
+
+  const handleTransactionClick = (t: TransactionUI) => {
+    if (t.needsReview) {
+      // Find the full transaction from backend data
+      const fullTransaction = transactions.find(tx => tx.id === t.id);
+      if (fullTransaction) {
+        setSelectedTransaction(fullTransaction);
+      }
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (!currentMonth) {
+    return (
+      <AppLayout>
+        <div className="max-w-4xl mx-auto">
+          <Card variant="glass" className="text-center py-12">
+            <CardContent>
+              <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
+                <InboxIcon className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                Nenhum mês criado
+              </h3>
+              <p className="text-muted-foreground">
+                Crie um mês na página de Orçamento para começar a adicionar transações.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
@@ -148,19 +229,21 @@ const Transactions = () => {
                   <CheckCircle2 className="w-8 h-8 text-success" />
                 </div>
                 <h3 className="text-lg font-semibold text-foreground mb-2">
-                  Tudo em ordem!
+                  {transactions.length === 0 ? "Nenhuma transação" : "Tudo em ordem!"}
                 </h3>
                 <p className="text-muted-foreground">
-                  {filter === "pending" 
-                    ? "Nenhuma transação pendente de categorização."
-                    : "Nenhuma transação encontrada."}
+                  {transactions.length === 0
+                    ? "Faça upload de extratos na página de Uploads para importar transações."
+                    : filter === "pending" 
+                      ? "Nenhuma transação pendente de categorização."
+                      : "Nenhuma transação encontrada."}
                 </p>
               </CardContent>
             </Card>
           ) : (
             <TransactionList
               transactions={filteredTransactions}
-              onTransactionClick={(t) => t.needsReview && setSelectedTransaction(t)}
+              onTransactionClick={handleTransactionClick}
             />
           )}
         </motion.div>
@@ -175,8 +258,8 @@ const Transactions = () => {
             onSelect={handleCategorySelect}
             transaction={{
               merchant: selectedTransaction.merchant,
-              amount: selectedTransaction.amount,
-              date: selectedTransaction.date,
+              amount: Number(selectedTransaction.amount),
+              date: format(new Date(selectedTransaction.transaction_date), "dd MMM", { locale: ptBR }),
             }}
           />
         )}

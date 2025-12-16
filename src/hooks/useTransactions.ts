@@ -178,3 +178,25 @@ export function useTransactionsSummary(monthId: string | undefined) {
 
   return summary;
 }
+
+export function useTransactionsByCategory(monthId: string | undefined, category: string | null) {
+  return useQuery({
+    queryKey: ['transactionsByCategory', monthId, category],
+    queryFn: async () => {
+      if (!monthId || !category) return [];
+      
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('month_id', monthId)
+        .eq('category', category)
+        .eq('is_internal_transfer', false)
+        .eq('is_card_payment', false)
+        .order('transaction_date', { ascending: false });
+
+      if (error) throw error;
+      return data as Transaction[];
+    },
+    enabled: !!monthId && !!category,
+  });
+}
