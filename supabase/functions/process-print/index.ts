@@ -6,18 +6,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface VisionResponse {
-  responses: Array<{
-    textAnnotations?: Array<{
-      description: string;
-      boundingPoly?: {
-        vertices: Array<{ x: number; y: number }>;
-      };
-    }>;
-    error?: { message: string };
-  }>;
-}
-
 interface ExtractedTransaction {
   date: string;
   merchant: string;
@@ -29,10 +17,10 @@ interface ExtractedTransaction {
 function normalizeMerchant(merchant: string): string {
   return merchant
     .toLowerCase()
-    .replace(/[^\w\s]/g, "") // Remove punctuation
-    .replace(/\s+/g, " ") // Normalize spaces
+    .replace(/[^\w\s]/g, "")
+    .replace(/\s+/g, " ")
     .trim()
-    .substring(0, 50); // Limit length
+    .substring(0, 50);
 }
 
 // Generate fingerprint for deduplication
@@ -41,7 +29,6 @@ function generateFingerprint(coupleId: string, date: string, amount: number, mer
   const normalizedAmount = Math.abs(amount).toFixed(2);
   const input = `${coupleId}|${date}|${normalizedAmount}|${normalizedMerchant}`;
   
-  // Simple hash for fingerprint
   let hash = 0;
   for (let i = 0; i < input.length; i++) {
     const char = input.charCodeAt(i);
@@ -51,92 +38,17 @@ function generateFingerprint(coupleId: string, date: string, amount: number, mer
   return Math.abs(hash).toString(36);
 }
 
-// Parse Brazilian currency format
-function parseAmount(amountStr: string): number | null {
-  // Handle formats like "1.234,56" or "1234,56" or "R$ 1.234,56"
-  const cleaned = amountStr
-    .replace(/R\$\s*/g, "")
-    .replace(/\./g, "")
-    .replace(",", ".")
-    .trim();
-  
-  const amount = parseFloat(cleaned);
-  return isNaN(amount) ? null : amount;
-}
-
-// Parse date from various formats
-function parseDate(dateStr: string): string | null {
-  // Try DD/MM/YYYY or DD/MM
-  const match = dateStr.match(/(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/);
-  if (match) {
-    const day = match[1].padStart(2, "0");
-    const month = match[2].padStart(2, "0");
-    const year = match[3] ? (match[3].length === 2 ? `20${match[3]}` : match[3]) : new Date().getFullYear().toString();
-    return `${year}-${month}-${day}`;
-  }
-  return null;
-}
-
-// Extract transactions from OCR text
-function extractTransactions(text: string, coupleId: string): ExtractedTransaction[] {
-  const lines = text.split("\n");
-  const transactions: ExtractedTransaction[] = [];
-  
-  // Pattern: date, merchant, amount (Brazilian format)
-  const transactionPattern = /(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)\s+(.+?)\s+([-]?\d{1,3}(?:\.\d{3})*,\d{2})/g;
-  
-  for (const line of lines) {
-    let match;
-    while ((match = transactionPattern.exec(line)) !== null) {
-      const dateStr = match[1];
-      const merchant = match[2].trim();
-      const amountStr = match[3];
-      
-      const date = parseDate(dateStr);
-      const amount = parseAmount(amountStr);
-      
-      if (date && amount !== null && merchant.length > 2) {
-        transactions.push({
-          date,
-          merchant,
-          merchantNormalized: normalizeMerchant(merchant),
-          amount: Math.abs(amount), // Store as positive, expenses are always positive in this context
-        });
-      }
-    }
-  }
-  
-  // Fallback: try line-by-line parsing
-  if (transactions.length === 0) {
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
-      
-      // Look for amount pattern
-      const amountMatch = line.match(/([-]?\d{1,3}(?:\.\d{3})*,\d{2})/);
-      if (amountMatch) {
-        const amount = parseAmount(amountMatch[1]);
-        if (amount !== null && amount > 0) {
-          // Look for date in same or previous line
-          const dateMatch = line.match(/(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)/);
-          const date = dateMatch ? parseDate(dateMatch[1]) : null;
-          
-          // Extract merchant (text before amount)
-          const merchantMatch = line.replace(amountMatch[0], "").replace(/\d{1,2}\/\d{1,2}(?:\/\d{2,4})?/, "").trim();
-          
-          if (date && merchantMatch.length > 2) {
-            transactions.push({
-              date,
-              merchant: merchantMatch,
-              merchantNormalized: normalizeMerchant(merchantMatch),
-              amount: Math.abs(amount),
-            });
-          }
-        }
-      }
-    }
-  }
-  
-  return transactions;
+// Get MIME type from file extension
+function getMimeType(filePath: string): string {
+  const ext = filePath.split('.').pop()?.toLowerCase();
+  const mimeTypes: Record<string, string> = {
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'png': 'image/png',
+    'gif': 'image/gif',
+    'webp': 'image/webp',
+  };
+  return mimeTypes[ext || ''] || 'image/jpeg';
 }
 
 serve(async (req) => {
@@ -154,11 +66,11 @@ serve(async (req) => {
       );
     }
 
-    const GOOGLE_VISION_API_KEY = Deno.env.get("GOOGLE_VISION_API_KEY");
-    if (!GOOGLE_VISION_API_KEY) {
-      console.error("GOOGLE_VISION_API_KEY not configured");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      console.error("LOVABLE_API_KEY not configured");
       return new Response(
-        JSON.stringify({ error: "OCR service not configured" }),
+        JSON.stringify({ error: "AI service not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -183,41 +95,106 @@ serve(async (req) => {
     // Convert to base64
     const arrayBuffer = await fileData.arrayBuffer();
     const base64Image = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+    const mimeType = getMimeType(fileUrl);
 
-    // Call Google Vision API
-    const visionResponse = await fetch(
-      `https://vision.googleapis.com/v1/images:annotate?key=${GOOGLE_VISION_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          requests: [
-            {
-              image: { content: base64Image },
-              features: [{ type: "TEXT_DETECTION" }],
-            },
-          ],
-        }),
+    console.log("Calling Gemini for OCR extraction...");
+
+    // Call Gemini via Lovable AI Gateway
+    const geminiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          {
+            role: "system",
+            content: `Você é um extrator de transações financeiras de prints de faturas de cartão de crédito brasileiro.
+Analise a imagem e extraia TODAS as transações visíveis.
+
+Para cada transação, retorne no formato JSON:
+{
+  "transactions": [
+    {
+      "date": "YYYY-MM-DD",
+      "merchant": "Nome do Estabelecimento",
+      "amount": 123.45
+    }
+  ]
+}
+
+Regras:
+- Datas devem estar em formato YYYY-MM-DD
+- Se a data não tiver ano, assuma ${new Date().getFullYear()}
+- Valores devem ser números positivos (sem R$, sem vírgulas decimais)
+- Converta "1.234,56" para 1234.56
+- Ignore linhas que não são transações (totais, saldos, taxas)
+- Se não encontrar transações, retorne {"transactions": []}
+- Retorne APENAS o JSON, sem explicações`
+          },
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: "Extraia todas as transações desta fatura de cartão de crédito:"
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: `data:${mimeType};base64,${base64Image}`
+                }
+              }
+            ]
+          }
+        ],
+      }),
+    });
+
+    if (!geminiResponse.ok) {
+      const errorText = await geminiResponse.text();
+      console.error("Gemini API error:", geminiResponse.status, errorText);
+      
+      if (geminiResponse.status === 429) {
+        throw new Error("Rate limit exceeded. Please try again later.");
       }
-    );
-
-    if (!visionResponse.ok) {
-      const errorText = await visionResponse.text();
-      console.error("Vision API error:", errorText);
-      throw new Error(`Vision API error: ${visionResponse.status}`);
+      if (geminiResponse.status === 402) {
+        throw new Error("AI credits exhausted. Please add credits to continue.");
+      }
+      throw new Error(`AI API error: ${geminiResponse.status}`);
     }
 
-    const visionData: VisionResponse = await visionResponse.json();
+    const geminiData = await geminiResponse.json();
+    const responseContent = geminiData.choices?.[0]?.message?.content || "";
     
-    if (visionData.responses[0]?.error) {
-      throw new Error(visionData.responses[0].error.message);
+    console.log("Gemini response received, parsing...");
+
+    // Parse the JSON response from Gemini
+    let extractedTransactions: ExtractedTransaction[] = [];
+    try {
+      // Extract JSON from response (handle markdown code blocks)
+      const jsonMatch = responseContent.match(/```(?:json)?\s*([\s\S]*?)```/) || 
+                        responseContent.match(/\{[\s\S]*\}/);
+      const jsonStr = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : responseContent;
+      const parsed = JSON.parse(jsonStr.trim());
+      
+      if (parsed.transactions && Array.isArray(parsed.transactions)) {
+        extractedTransactions = parsed.transactions
+          .filter((t: any) => t.date && t.merchant && t.amount)
+          .map((t: any) => ({
+            date: t.date,
+            merchant: t.merchant,
+            merchantNormalized: normalizeMerchant(t.merchant),
+            amount: Math.abs(parseFloat(t.amount)),
+          }));
+      }
+    } catch (parseError) {
+      console.error("Error parsing Gemini response:", parseError);
+      console.log("Raw response:", responseContent);
     }
 
-    const fullText = visionData.responses[0]?.textAnnotations?.[0]?.description || "";
-    console.log("Extracted text length:", fullText.length);
-
-    // Extract transactions from OCR text
-    const extractedTransactions = extractTransactions(fullText, coupleId);
     console.log(`Extracted ${extractedTransactions.length} transactions`);
 
     // Check for existing fingerprints to avoid duplicates
@@ -253,7 +230,7 @@ serve(async (req) => {
         needs_review: true,
         import_id: importId,
         fingerprint: generateFingerprint(coupleId, t.date, t.amount, t.merchant),
-        raw_data: { ocr_text: fullText.substring(0, 1000) },
+        raw_data: { extracted_by: "gemini-2.5-flash" },
       }));
 
       const { error: insertError } = await supabase
