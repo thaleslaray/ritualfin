@@ -1,14 +1,14 @@
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   Calendar, 
   Upload, 
+  FileText, 
   TrendingUp, 
   TrendingDown,
   AlertTriangle,
   CheckCircle2,
   ChevronRight,
-  Sparkles,
-  Loader2
+  Sparkles
 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,69 +16,34 @@ import { Button } from "@/components/ui/button";
 import { BudgetComparisonMini } from "@/components/budget/BudgetComparison";
 import { RitualBadge } from "@/components/brand/Logo";
 import { Link } from "react-router-dom";
-import { useCurrentMonth, useCategoryBudgets } from "@/hooks/useMonths";
-import { useTransactions } from "@/hooks/useTransactions";
-import { useImports } from "@/hooks/useImports";
-import { format, formatDistanceToNow } from "date-fns";
-import { ptBR } from "date-fns/locale";
+
+// Sample data
+const currentMonth = {
+  name: "Dezembro 2024",
+  isClosed: true,
+  totalPlanned: 8500,
+  totalActual: 7234,
+  daysRemaining: 16,
+};
+
+const budgetCategories = [
+  { id: "moradia", planned: 2500, actual: 2500 },
+  { id: "alimentacao", planned: 1800, actual: 1650 },
+  { id: "transporte", planned: 800, actual: 920 },
+  { id: "saude", planned: 400, actual: 280 },
+  { id: "compras", planned: 1200, actual: 1100 },
+  { id: "lazer", planned: 600, actual: 520 },
+  { id: "tecnologia", planned: 500, actual: 264 },
+  { id: "outros", planned: 700, actual: 0 },
+];
+
+const pendingTransactions = 5;
+const lastUpload = "há 2 dias";
 
 const Index = () => {
-  const { data: currentMonth, isLoading: isLoadingMonth } = useCurrentMonth();
-  const { data: categoryBudgets, isLoading: isLoadingBudgets } = useCategoryBudgets(currentMonth?.id);
-  const { data: transactions, isLoading: isLoadingTransactions } = useTransactions(currentMonth?.id);
-  const { data: imports } = useImports();
-
-  const isLoading = isLoadingMonth || isLoadingBudgets || isLoadingTransactions;
-
-  // Calculate totals
-  const totalPlanned = categoryBudgets?.reduce((sum, cat) => sum + Number(cat.planned_amount), 0) || 0;
-  const totalActual = transactions
-    ?.filter(t => !t.is_internal_transfer && !t.is_card_payment)
-    .reduce((sum, t) => sum + Number(t.amount), 0) || 0;
-  
-  const pendingTransactions = transactions?.filter(t => t.needs_review).length || 0;
-  
-  const lastImport = imports?.[0];
-  const lastUpload = lastImport 
-    ? formatDistanceToNow(new Date(lastImport.created_at), { addSuffix: true, locale: ptBR })
-    : "nenhum upload";
-
-  // Format month name
-  const monthName = currentMonth?.year_month 
-    ? format(new Date(currentMonth.year_month + "-01"), "MMMM yyyy", { locale: ptBR })
-    : format(new Date(), "MMMM yyyy", { locale: ptBR });
-
-  const daysRemaining = (() => {
-    const now = new Date();
-    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    return lastDay.getDate() - now.getDate();
-  })();
-
-  const savingsAmount = totalPlanned - totalActual;
+  const savingsAmount = currentMonth.totalPlanned - currentMonth.totalActual;
+  const savingsPercentage = Math.round((savingsAmount / currentMonth.totalPlanned) * 100);
   const isPositive = savingsAmount >= 0;
-
-  // Prepare budget categories for mini comparison
-  const budgetCategories = categoryBudgets?.map(cat => {
-    const categoryTransactions = transactions?.filter(
-      t => t.category === cat.category && !t.is_internal_transfer && !t.is_card_payment
-    ) || [];
-    const actual = categoryTransactions.reduce((sum, t) => sum + Number(t.amount), 0);
-    return {
-      id: cat.category,
-      planned: Number(cat.planned_amount),
-      actual,
-    };
-  }) || [];
-
-  if (isLoading) {
-    return (
-      <AppLayout>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
-      </AppLayout>
-    );
-  }
 
   return (
     <AppLayout>
@@ -91,13 +56,13 @@ const Index = () => {
         >
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-2xl lg:text-3xl font-bold text-foreground capitalize">
-                {monthName}
+              <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
+                {currentMonth.name}
               </h1>
-              {currentMonth?.closed_at && <RitualBadge />}
+              {currentMonth.isClosed && <RitualBadge />}
             </div>
             <p className="text-muted-foreground">
-              {daysRemaining} dias restantes no mês
+              {currentMonth.daysRemaining} dias restantes no mês
             </p>
           </div>
           <Link to="/budget">
@@ -135,13 +100,13 @@ const Index = () => {
                   <div className="text-center p-4 rounded-xl bg-muted/50">
                     <p className="text-sm text-muted-foreground mb-1">Planejado</p>
                     <p className="text-xl font-bold text-foreground">
-                      R$ {totalPlanned.toLocaleString('pt-BR')}
+                      R$ {currentMonth.totalPlanned.toLocaleString('pt-BR')}
                     </p>
                   </div>
                   <div className="text-center p-4 rounded-xl bg-muted/50">
                     <p className="text-sm text-muted-foreground mb-1">Real</p>
                     <p className="text-xl font-bold text-foreground">
-                      R$ {totalActual.toLocaleString('pt-BR')}
+                      R$ {currentMonth.totalActual.toLocaleString('pt-BR')}
                     </p>
                   </div>
                   <div className={`text-center p-4 rounded-xl ${isPositive ? "bg-success/10" : "bg-destructive/10"}`}>
@@ -153,23 +118,14 @@ const Index = () => {
                         <TrendingDown className="w-5 h-5 text-destructive" />
                       )}
                       <p className={`text-xl font-bold ${isPositive ? "text-success" : "text-destructive"}`}>
-                        {isPositive ? "+" : ""}R$ {Math.abs(savingsAmount).toLocaleString('pt-BR')}
+                        {isPositive ? "+" : ""}R$ {savingsAmount.toLocaleString('pt-BR')}
                       </p>
                     </div>
                   </div>
                 </div>
 
                 {/* Budget bars */}
-                {budgetCategories.length > 0 ? (
-                  <BudgetComparisonMini categories={budgetCategories} />
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <p>Nenhum orçamento definido.</p>
-                    <Link to="/budget" className="text-primary hover:underline">
-                      Começar o Ritual Dia 1
-                    </Link>
-                  </div>
-                )}
+                <BudgetComparisonMini categories={budgetCategories} />
               </CardContent>
             </Card>
           </motion.div>

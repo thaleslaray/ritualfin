@@ -124,28 +124,6 @@ export function useCreateTransaction() {
   });
 }
 
-export function useUpdateTransaction() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<Transaction> & { id: string }) => {
-      const { data, error } = await supabase
-        .from('transactions')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data as Transaction;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['pendingTransactions'] });
-    },
-  });
-}
-
 export function useDeleteTransaction() {
   const queryClient = useQueryClient();
 
