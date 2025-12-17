@@ -35,7 +35,7 @@ export const SetupChecklist = ({
     {
       id: "month",
       label: "Criar orçamento do mês",
-      description: "Defina quanto vão gastar em cada categoria",
+      description: "Cadastre contas fixas (boletos) e defina valores por categoria",
       completed: hasMonth && hasBudget,
       href: "/budget",
       icon: Sparkles,

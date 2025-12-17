@@ -26,7 +26,7 @@ const steps = [
   {
     icon: Calendar,
     title: "Dia 1 do Mês",
-    description: "Todo início de mês, vocês definem o orçamento juntos. É o momento de alinhar quanto vão gastar em cada categoria.",
+    description: "Cadastrem as contas fixas (boletos, financiamentos) e definam quanto gastar em cada categoria. Leva uns 10 minutos.",
     color: "text-blue-500",
     bgColor: "bg-blue-500/10",
   },
