@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
@@ -8,6 +9,32 @@ type ImportInsert = TablesInsert<"imports">;
 
 export const useImports = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  // Subscribe to realtime changes on imports table
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('imports-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'imports',
+        },
+        () => {
+          // Invalidate query when any change happens
+          queryClient.invalidateQueries({ queryKey: ["imports"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, queryClient]);
 
   return useQuery({
     queryKey: ["imports", user?.id],
