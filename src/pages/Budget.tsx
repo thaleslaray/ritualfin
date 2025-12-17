@@ -30,7 +30,8 @@ import {
   useRecurringBills, 
   useCreateRecurringBill, 
   useUpdateRecurringBill, 
-  useDeleteRecurringBill 
+  useDeleteRecurringBill,
+  RecurringBill
 } from "@/hooks/useRecurringBills";
 import { 
   useCards, 
@@ -40,6 +41,7 @@ import {
 } from "@/hooks/useCards";
 import { format, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { EditableBillRow } from "@/components/budget/EditableBillRow";
 
 const Budget = () => {
   const [step, setStep] = useState(1);
@@ -314,48 +316,15 @@ const Budget = () => {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {recurringBills?.map((bill, index) => (
-                    <motion.div
+                    <EditableBillRow
                       key={bill.id}
-                      className="flex items-center gap-3 p-3 rounded-xl bg-muted/50"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                    >
-                      <Input
-                        value={bill.name}
-                        className="flex-1 bg-transparent border-0 font-medium"
-                        disabled={isLocked}
-                        onChange={(e) => updateRecurringBill.mutate({ id: bill.id, name: e.target.value })}
-                      />
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">R$</span>
-                        <Input
-                          type="number"
-                          value={bill.amount}
-                          className="w-24 bg-card border-border"
-                          disabled={isLocked}
-                          onChange={(e) => updateRecurringBill.mutate({ id: bill.id, amount: parseFloat(e.target.value) || 0 })}
-                        />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">Dia</span>
-                        <Input
-                          type="number"
-                          value={bill.due_day}
-                          className="w-16 bg-card border-border"
-                          disabled={isLocked}
-                          onChange={(e) => updateRecurringBill.mutate({ id: bill.id, due_day: parseInt(e.target.value) || 1 })}
-                        />
-                      </div>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        disabled={isLocked}
-                        onClick={() => deleteRecurringBill.mutate(bill.id)}
-                      >
-                        <Trash2 className="w-4 h-4 text-muted-foreground" />
-                      </Button>
-                    </motion.div>
+                      bill={bill}
+                      index={index}
+                      isLocked={isLocked}
+                      onUpdate={(id, updates) => updateRecurringBill.mutate({ id, ...updates })}
+                      onDelete={(id) => deleteRecurringBill.mutate(id)}
+                      isUpdating={updateRecurringBill.isPending}
+                    />
                   ))}
                   
                   {/* Add new bill form */}
