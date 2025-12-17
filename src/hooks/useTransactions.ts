@@ -64,6 +64,18 @@ export function usePendingTransactions(monthId: string | undefined) {
   });
 }
 
+// Normalize merchant for mapping storage
+function normalizeMerchant(merchant: string): string {
+  return merchant
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Remove accents
+    .replace(/[^\w\s]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .substring(0, 50);
+}
+
 export function useCategorizeTransaction() {
   const queryClient = useQueryClient();
 
@@ -71,12 +83,15 @@ export function useCategorizeTransaction() {
     mutationFn: async ({ 
       transactionId, 
       category, 
-      isInternalTransfer = false 
+      isInternalTransfer = false,
+      merchantNormalized,
     }: { 
       transactionId: string; 
       category: string | null;
       isInternalTransfer?: boolean;
+      merchantNormalized?: string | null;
     }) => {
+      // Update the transaction
       const { data, error } = await supabase
         .from('transactions')
         .update({ 
@@ -90,7 +105,48 @@ export function useCategorizeTransaction() {
         .single();
 
       if (error) throw error;
-      return data as Transaction;
+      
+      const transaction = data as Transaction;
+
+      // Learn from this categorization - save merchant mapping for future auto-categorization
+      // Only save if we have a category and merchant info (not internal transfers)
+      if (category && !isInternalTransfer) {
+        const normalizedMerchant = merchantNormalized || 
+          (transaction.merchant_normalized) || 
+          normalizeMerchant(transaction.merchant);
+        
+        if (normalizedMerchant && normalizedMerchant.length > 2) {
+          // Get user's couple_id
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('couple_id')
+            .single();
+
+          if (profile?.couple_id) {
+            // Upsert the merchant mapping (insert or update usage_count)
+            const { error: mappingError } = await supabase
+              .from('merchant_mappings')
+              .upsert({
+                couple_id: profile.couple_id,
+                merchant_normalized: normalizedMerchant,
+                category: category,
+                is_global: false,
+                usage_count: 1,
+              }, {
+                onConflict: 'couple_id,merchant_normalized',
+              });
+
+            if (mappingError) {
+              console.warn('Failed to save merchant mapping:', mappingError);
+              // Don't throw - this is a background learning feature
+            } else {
+              console.log(`Learned: "${normalizedMerchant}" → ${category}`);
+            }
+          }
+        }
+      }
+
+      return transaction;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
