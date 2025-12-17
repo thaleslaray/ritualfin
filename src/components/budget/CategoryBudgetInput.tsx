@@ -12,6 +12,7 @@ interface CategoryBudgetInputProps {
   categoryInfo: {
     icon: React.ComponentType<{ className?: string }>;
     label: string;
+    color: string;
   };
   onUpdate: (id: string, amount: number) => void;
 }
@@ -56,8 +57,11 @@ export function CategoryBudgetInput({
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: index * 0.04 }}
     >
-      <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center shrink-0">
-        <Icon className="w-5 h-5 text-foreground" />
+      <div 
+        className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+        style={{ backgroundColor: categoryInfo.color }}
+      >
+        <Icon className="w-5 h-5 text-white" />
       </div>
       <span className="flex-1 font-medium text-foreground">
         {categoryInfo.label}
