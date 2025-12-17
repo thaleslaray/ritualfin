@@ -5,11 +5,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Logo } from '@/components/brand/Logo';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -112,176 +111,163 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md"
+        transition={{ duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
+        className="w-full max-w-sm"
       >
-        <div className="text-center mb-8">
-          <Logo size="large" />
-          <p className="text-muted-foreground">
-            Sua fonte única da verdade financeira
+        {/* Logo & Hero Text */}
+        <div className="text-center mb-12">
+          <motion.div 
+            className="flex justify-center mb-8"
+            initial={{ scale: 0.9 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
+            <div className="w-16 h-16 rounded-2xl bg-foreground flex items-center justify-center">
+              <span className="text-background font-bold text-3xl">R</span>
+            </div>
+          </motion.div>
+          <h1 className="text-headline text-foreground mb-3">
+            {isLogin ? 'Bem-vindo de volta' : 'Crie sua conta'}
+          </h1>
+          <p className="text-body text-muted-foreground">
+            Clareza financeira para o seu casal.
           </p>
         </div>
 
-        <Card className="backdrop-blur-sm bg-card/80 border-border/50 shadow-xl">
-          <CardHeader className="space-y-1 pb-4">
-            <CardTitle className="text-2xl font-bold text-center">
-              {isLogin ? 'Entrar' : 'Criar conta'}
-            </CardTitle>
-            <CardDescription className="text-center">
-              {isLogin
-                ? 'Entre com seu email e senha'
-                : 'Preencha os dados para criar sua conta de casal'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <AnimatePresence mode="wait">
-                {!isLogin && (
-                  <motion.div
-                    key="fullName"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <div className="space-y-2">
-                      <Label htmlFor="fullName">Seu nome</Label>
-                      <div className="relative">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="fullName"
-                          name="fullName"
-                          type="text"
-                          placeholder="João Silva"
-                          value={formData.fullName}
-                          onChange={handleChange}
-                          className="pl-10"
-                        />
-                      </div>
-                      {errors.fullName && (
-                        <p className="text-sm text-destructive">{errors.fullName}</p>
-                      )}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <AnimatePresence mode="wait">
+            {!isLogin && (
+              <motion.div
+                key="fullName"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="space-y-2">
+                  <Label htmlFor="fullName" className="text-caption text-muted-foreground">Nome completo</Label>
                   <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="voce@exemplo.com"
-                    value={formData.email}
+                    id="fullName"
+                    name="fullName"
+                    type="text"
+                    placeholder="João Silva"
+                    value={formData.fullName}
                     onChange={handleChange}
-                    className="pl-10"
                   />
+                  {errors.fullName && (
+                    <p className="text-footnote text-destructive">{errors.fullName}</p>
+                  )}
                 </div>
-                {errors.email && (
-                  <p className="text-sm text-destructive">{errors.email}</p>
-                )}
-              </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    name="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
-                    value={formData.password}
-                    onChange={handleChange}
-                    className="pl-10 pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-                {errors.password && (
-                  <p className="text-sm text-destructive">{errors.password}</p>
-                )}
-              </div>
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-caption text-muted-foreground">Email</Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="voce@exemplo.com"
+              value={formData.email}
+              onChange={handleChange}
+            />
+            {errors.email && (
+              <p className="text-footnote text-destructive">{errors.email}</p>
+            )}
+          </div>
 
-              <AnimatePresence mode="wait">
-                {!isLogin && (
-                  <motion.div
-                    key="confirmPassword"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <div className="space-y-2">
-                      <Label htmlFor="confirmPassword">Confirmar senha</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="confirmPassword"
-                          name="confirmPassword"
-                          type={showPassword ? 'text' : 'password'}
-                          placeholder="••••••••"
-                          value={formData.confirmPassword}
-                          onChange={handleChange}
-                          className="pl-10"
-                        />
-                      </div>
-                      {errors.confirmPassword && (
-                        <p className="text-sm text-destructive">{errors.confirmPassword}</p>
-                      )}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <Button type="submit" className="w-full" size="lg" disabled={loading}>
-                {loading ? (
-                  <span className="flex items-center gap-2">
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                    {isLogin ? 'Entrando...' : 'Criando conta...'}
-                  </span>
-                ) : (
-                  isLogin ? 'Entrar' : 'Criar conta'
-                )}
-              </Button>
-            </form>
-
-            <div className="mt-6 text-center">
+          <div className="space-y-2">
+            <Label htmlFor="password" className="text-caption text-muted-foreground">Senha</Label>
+            <div className="relative">
+              <Input
+                id="password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="••••••••"
+                value={formData.password}
+                onChange={handleChange}
+                className="pr-12"
+              />
               <button
                 type="button"
-                onClick={() => {
-                  setIsLogin(!isLogin);
-                  setErrors({});
-                }}
-                className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
               >
-                {isLogin ? (
-                  <>
-                    Não tem conta?{' '}
-                    <span className="text-primary font-medium">Criar agora</span>
-                  </>
-                ) : (
-                  <>
-                    Já tem conta?{' '}
-                    <span className="text-primary font-medium">Entrar</span>
-                  </>
-                )}
+                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
               </button>
             </div>
-          </CardContent>
-        </Card>
+            {errors.password && (
+              <p className="text-footnote text-destructive">{errors.password}</p>
+            )}
+          </div>
+
+          <AnimatePresence mode="wait">
+            {!isLogin && (
+              <motion.div
+                key="confirmPassword"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword" className="text-caption text-muted-foreground">Confirmar senha</Label>
+                  <Input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                  />
+                  {errors.confirmPassword && (
+                    <p className="text-footnote text-destructive">{errors.confirmPassword}</p>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <Button 
+            type="submit" 
+            variant="hero" 
+            className="w-full h-13 mt-8" 
+            disabled={loading}
+          >
+            {loading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <>
+                <span>{isLogin ? 'Continuar' : 'Criar conta'}</span>
+                <ArrowRight className="w-5 h-5" />
+              </>
+            )}
+          </Button>
+        </form>
+
+        {/* Toggle */}
+        <div className="mt-8 text-center">
+          <button
+            type="button"
+            onClick={() => {
+              setIsLogin(!isLogin);
+              setErrors({});
+            }}
+            className="text-body text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {isLogin ? (
+              <>Não tem conta? <span className="text-primary font-medium">Criar agora</span></>
+            ) : (
+              <>Já tem conta? <span className="text-primary font-medium">Entrar</span></>
+            )}
+          </button>
+        </div>
       </motion.div>
     </div>
   );

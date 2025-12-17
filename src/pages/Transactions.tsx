@@ -34,12 +34,10 @@ const Transactions = () => {
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   
-  // Ref for undo functionality
   const undoRef = useRef<{ id: string; category: string | null; isInternal: boolean } | null>(null);
 
   const isLoading = isLoadingMonth || isLoadingTransactions;
 
-  // Map backend transactions to UI format
   const mapToUI = (t: Transaction): TransactionUI => ({
     id: t.id,
     merchant: t.merchant,
@@ -68,7 +66,6 @@ const Transactions = () => {
     const previousCategory = selectedTransaction.category;
     const previousIsInternal = selectedTransaction.is_internal_transfer;
     
-    // Store for undo
     undoRef.current = {
       id: selectedTransaction.id,
       category: previousCategory,
@@ -83,10 +80,10 @@ const Transactions = () => {
       },
       {
         onSuccess: () => {
-          toast.success("Transação categorizada!", {
+          toast.success("Categorizado!", {
             description: isInternalTransfer 
-              ? "Marcada como movimentação interna" 
-              : `Categoria: ${categoryId}`,
+              ? "Movimentação interna" 
+              : categoryId,
             action: {
               label: "Desfazer",
               onClick: () => {
@@ -110,7 +107,6 @@ const Transactions = () => {
 
   const handleTransactionClick = (t: TransactionUI) => {
     if (t.needsReview) {
-      // Find the full transaction from backend data
       const fullTransaction = transactions.find(tx => tx.id === t.id);
       if (fullTransaction) {
         setSelectedTransaction(fullTransaction);
@@ -122,7 +118,7 @@ const Transactions = () => {
     return (
       <AppLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
         </div>
       </AppLayout>
     );
@@ -131,17 +127,15 @@ const Transactions = () => {
   if (!currentMonth) {
     return (
       <AppLayout>
-        <div className="max-w-4xl mx-auto">
-          <Card variant="glass" className="text-center py-12">
+        <div className="max-w-lg mx-auto">
+          <Card className="text-center py-16">
             <CardContent>
-              <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
-                <InboxIcon className="w-8 h-8 text-muted-foreground" />
-              </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">
+              <InboxIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" strokeWidth={1.5} />
+              <h3 className="text-title text-foreground mb-2">
                 Nenhum mês criado
               </h3>
-              <p className="text-muted-foreground">
-                Crie um mês na página de Orçamento para começar a adicionar transações.
+              <p className="text-body text-muted-foreground">
+                Crie um mês na página de Orçamento.
               </p>
             </CardContent>
           </Card>
@@ -152,27 +146,24 @@ const Transactions = () => {
 
   return (
     <AppLayout>
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="space-y-8">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
         >
-          <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">
-              Transações
-            </h1>
-            <p className="text-muted-foreground">
-              {pendingCount > 0 ? (
-                <span className="text-warning-foreground font-medium">
-                  {pendingCount} transações aguardando categorização
-                </span>
-              ) : (
-                <span className="text-success">Todas categorizadas!</span>
-              )}
-            </p>
-          </div>
+          <h1 className="text-display text-foreground mb-2">
+            Transações
+          </h1>
+          <p className="text-body text-muted-foreground">
+            {pendingCount > 0 ? (
+              <span className="text-warning font-medium">
+                {pendingCount} aguardando categorização
+              </span>
+            ) : (
+              <span className="text-success">Todas categorizadas</span>
+            )}
+          </p>
         </motion.div>
 
         {/* Filters */}
@@ -183,21 +174,19 @@ const Transactions = () => {
           className="flex flex-col sm:flex-row gap-4"
         >
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
-              placeholder="Buscar transação..."
+              placeholder="Buscar..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              className="pl-12"
             />
           </div>
           <div className="flex gap-2">
             <Button
               variant={filter === "all" ? "default" : "outline"}
               onClick={() => setFilter("all")}
-              className="gap-2"
             >
-              <InboxIcon className="w-4 h-4" />
               Todas
             </Button>
             <Button
@@ -205,10 +194,9 @@ const Transactions = () => {
               onClick={() => setFilter("pending")}
               className="gap-2"
             >
-              <AlertTriangle className="w-4 h-4" />
               Pendentes
               {pendingCount > 0 && (
-                <span className="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-warning text-warning-foreground">
+                <span className="px-2 py-0.5 text-xs rounded-full bg-warning text-warning-foreground">
                   {pendingCount}
                 </span>
               )}
@@ -223,20 +211,16 @@ const Transactions = () => {
           transition={{ delay: 0.2 }}
         >
           {filteredTransactions.length === 0 ? (
-            <Card variant="glass" className="text-center py-12">
+            <Card className="text-center py-16">
               <CardContent>
-                <div className="w-16 h-16 rounded-2xl bg-success/10 flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle2 className="w-8 h-8 text-success" />
-                </div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">
-                  {transactions.length === 0 ? "Nenhuma transação" : "Tudo em ordem!"}
+                <CheckCircle2 className="w-12 h-12 text-success mx-auto mb-4" strokeWidth={1.5} />
+                <h3 className="text-title text-foreground mb-2">
+                  {transactions.length === 0 ? "Nenhuma transação" : "Tudo em ordem"}
                 </h3>
-                <p className="text-muted-foreground">
+                <p className="text-body text-muted-foreground">
                   {transactions.length === 0
-                    ? "Faça upload de extratos na página de Uploads para importar transações."
-                    : filter === "pending" 
-                      ? "Nenhuma transação pendente de categorização."
-                      : "Nenhuma transação encontrada."}
+                    ? "Faça upload de extratos para importar."
+                    : "Nenhuma transação pendente."}
                 </p>
               </CardContent>
             </Card>
