@@ -78,7 +78,7 @@ Mantenha seus dados atualizados:
 
 ```sh
 # Clone o repositório
-git clone https://github.com/thaleslaray/ritualfin.git
+git clone <URL_DO_SEU_REPOSITORIO>
 
 # Entre no diretório
 cd ritualfin
@@ -87,7 +87,10 @@ cd ritualfin
 npm install
 
 # Configure as variáveis de ambiente
-# Copie .env e configure suas credenciais do Supabase
+# Crie um arquivo .env na raiz do projeto com:
+# VITE_SUPABASE_URL=sua_url_do_supabase
+# VITE_SUPABASE_PUBLISHABLE_KEY=sua_chave_publica_do_supabase
+# VITE_SUPABASE_PROJECT_ID=seu_project_id
 
 # Inicie o servidor de desenvolvimento
 npm run dev
@@ -158,19 +161,9 @@ ritualfin/
 - Proteção de rotas com `ProtectedRoute`
 - Dados compartilhados apenas entre casais autorizados
 
-## 🤝 Contribuindo
-
-Contribuições são bem-vindas! Por favor:
-
-1. Faça um fork do projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/MinhaFeature`)
-3. Commit suas mudanças (`git commit -m 'Adiciona MinhaFeature'`)
-4. Push para a branch (`git push origin feature/MinhaFeature`)
-5. Abra um Pull Request
-
 ## 📝 Licença
 
-Este projeto é privado e de uso pessoal.
+Este projeto é de uso pessoal.
 
 ## 👥 Autores
 
