@@ -51,9 +51,11 @@ const Uploads = () => {
     }
 
     for (const file of files) {
+      let importRecord: { id: string } | null = null;
+      
       try {
         // Create import record first
-        const importRecord = await createImport.mutateAsync({
+        importRecord = await createImport.mutateAsync({
           type,
           file_name: file.name,
           status: "processing",
@@ -103,6 +105,16 @@ const Uploads = () => {
         }
       } catch (error) {
         console.error("Upload error:", error);
+        
+        // Marcar import como falhou se existir
+        if (importRecord?.id) {
+          await updateStatus.mutateAsync({
+            id: importRecord.id,
+            status: "failed",
+            error_message: error instanceof Error ? error.message : "Erro no upload",
+          });
+        }
+        
         toast.error(`Erro ao enviar ${file.name}`, {
           description: error instanceof Error ? error.message : "Erro desconhecido",
         });
