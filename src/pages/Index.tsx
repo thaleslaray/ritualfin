@@ -139,7 +139,7 @@ const Index = () => {
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="w-full rounded-3xl bg-gradient-to-r from-primary via-primary/80 to-primary/60 p-8 sm:p-12 text-primary-foreground"
+          className="w-full rounded-3xl bg-gradient-to-r from-destructive via-destructive/80 to-destructive/60 p-8 sm:p-12 text-destructive-foreground"
         >
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
             <div className="text-center sm:text-left">
