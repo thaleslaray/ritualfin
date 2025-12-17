@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -38,28 +38,28 @@ const Settings = () => {
 
   const settingsGroups: SettingsGroup[] = [
     {
-      title: "Conta",
+      title: "CONTA",
       items: [
-        { icon: User, label: "Perfil", description: "Editar informações pessoais", action: comingSoon },
-        { icon: Users, label: "Casal", description: "Gerenciar parceiro vinculado", action: comingSoon },
+        { icon: User, label: "Perfil", description: "Informações pessoais", action: comingSoon },
+        { icon: Users, label: "Parceiro", description: "Gerenciar vínculo", action: comingSoon },
       ],
     },
     {
-      title: "Financeiro",
+      title: "FINANCEIRO",
       items: [
-        { icon: CreditCard, label: "Cartões", description: "Gerenciar cartões e limites", action: comingSoon },
-        { icon: Tag, label: "Categorias", description: "Personalizar categorias", action: comingSoon },
+        { icon: CreditCard, label: "Cartões", description: "Gerenciar cartões", action: comingSoon },
+        { icon: Tag, label: "Categorias", description: "Personalizar", action: comingSoon },
       ],
     },
     {
-      title: "Preferências",
+      title: "PREFERÊNCIAS",
       items: [
-        { icon: Bell, label: "Notificações", description: "Configurar lembretes", action: comingSoon },
+        { icon: Bell, label: "Notificações", description: "Lembretes", action: comingSoon },
         { icon: Shield, label: "Privacidade", description: "Segurança e LGPD", action: comingSoon },
       ],
     },
     {
-      title: "Suporte",
+      title: "SUPORTE",
       items: [
         { icon: HelpCircle, label: "Ajuda", description: "FAQ e tutoriais", action: comingSoon },
       ],
@@ -91,18 +91,15 @@ const Settings = () => {
 
   return (
     <AppLayout>
-      <div className="max-w-2xl mx-auto space-y-6">
+      <div className="max-w-xl mx-auto space-y-8">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">
+          <h1 className="text-display text-foreground">
             Configurações
           </h1>
-          <p className="text-muted-foreground">
-            Gerencie sua conta e preferências
-          </p>
         </motion.div>
 
         {/* Profile Card */}
@@ -111,24 +108,22 @@ const Settings = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <Card variant="glass">
+          <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
-                <Avatar className="w-16 h-16">
-                  <AvatarFallback className="bg-primary text-primary-foreground text-xl">
+                <Avatar className="w-16 h-16 rounded-2xl">
+                  <AvatarFallback className="bg-foreground text-background text-xl rounded-2xl">
                     {getInitials()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-foreground text-lg">{displayName}</h3>
-                  <p className="text-sm text-muted-foreground">{displayEmail}</p>
+                  <h3 className="text-title text-foreground">{displayName}</h3>
+                  <p className="text-caption text-muted-foreground">{displayEmail}</p>
                   {memberSince && (
-                    <p className="text-xs text-muted-foreground mt-1">Membro desde {memberSince}</p>
+                    <p className="text-footnote text-muted-foreground mt-1">Membro desde {memberSince}</p>
                   )}
                 </div>
-                <Button variant="outline" size="sm">
-                  Editar
-                </Button>
+                <ChevronRight className="w-5 h-5 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
@@ -140,12 +135,12 @@ const Settings = () => {
             key={group.title}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 + groupIndex * 0.1 }}
+            transition={{ delay: 0.15 + groupIndex * 0.05 }}
           >
-            <Card variant="glass">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base text-muted-foreground">{group.title}</CardTitle>
-              </CardHeader>
+            <p className="text-footnote font-semibold text-muted-foreground tracking-wider mb-3 px-1">
+              {group.title}
+            </p>
+            <Card>
               <CardContent className="p-0">
                 {group.items.map((item, itemIndex) => (
                   <button
@@ -159,8 +154,8 @@ const Settings = () => {
                       <item.icon className="w-5 h-5 text-foreground" />
                     </div>
                     <div className="flex-1 text-left">
-                      <p className="font-medium text-foreground">{item.label}</p>
-                      <p className="text-sm text-muted-foreground">{item.description}</p>
+                      <p className="text-body text-foreground font-medium">{item.label}</p>
+                      <p className="text-caption text-muted-foreground">{item.description}</p>
                     </div>
                     <ChevronRight className="w-5 h-5 text-muted-foreground" />
                   </button>
@@ -174,7 +169,7 @@ const Settings = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
+          transition={{ delay: 0.4 }}
         >
           <Button 
             variant="outline" 
@@ -188,12 +183,12 @@ const Settings = () => {
 
         {/* Version */}
         <motion.p
-          className="text-center text-xs text-muted-foreground"
+          className="text-center text-footnote text-muted-foreground"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.7 }}
+          transition={{ delay: 0.5 }}
         >
-          Ritual Financeiro do Casal v1.0.0
+          Ritual Financeiro v1.0.0
         </motion.p>
       </div>
     </AppLayout>

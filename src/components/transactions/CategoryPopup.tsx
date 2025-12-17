@@ -8,7 +8,8 @@ import {
   Smartphone, 
   Plane, 
   MoreHorizontal,
-  X
+  X,
+  ArrowLeftRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -46,7 +47,7 @@ export const CategoryPopup = ({ isOpen, onClose, onSelect, transaction }: Catego
     >
       {/* Backdrop */}
       <motion.div
-        className="absolute inset-0 bg-foreground/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-foreground/20 backdrop-blur-xl"
         onClick={onClose}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -54,66 +55,72 @@ export const CategoryPopup = ({ isOpen, onClose, onSelect, transaction }: Catego
 
       {/* Modal */}
       <motion.div
-        className="relative w-full max-w-md bg-card rounded-t-3xl sm:rounded-2xl shadow-2xl border border-border overflow-hidden"
+        className="relative w-full max-w-md bg-card rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden"
         initial={{ y: "100%", opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: "100%", opacity: 0 }}
-        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+        transition={{ type: "spring", damping: 30, stiffness: 400 }}
       >
+        {/* Handle bar for mobile */}
+        <div className="sm:hidden flex justify-center pt-3 pb-1">
+          <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+        </div>
+
         {/* Header */}
-        <div className="p-6 border-b border-border">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-foreground">Categorizar transação</h3>
-            <Button variant="ghost" size="icon" onClick={onClose}>
+        <div className="p-6 pb-4 flex items-center justify-between">
+          <div className="flex-1" />
+          <h3 className="text-title text-foreground text-center">Categorizar</h3>
+          <div className="flex-1 flex justify-end">
+            <Button variant="ghost" size="icon-sm" onClick={onClose} className="rounded-full">
               <X className="w-5 h-5" />
             </Button>
           </div>
-          
-          {transaction && (
-            <div className="bg-muted rounded-xl p-4">
-              <p className="font-medium text-foreground">{transaction.merchant}</p>
-              <div className="flex items-center justify-between mt-1">
-                <span className="text-sm text-muted-foreground">{transaction.date}</span>
-                <span className="font-semibold text-foreground">
-                  R$ {transaction.amount.toFixed(2)}
-                </span>
-              </div>
-            </div>
-          )}
         </div>
+        
+        {/* Transaction info */}
+        {transaction && (
+          <div className="px-6 pb-6">
+            <div className="text-center">
+              <p className="text-headline text-foreground mb-1">{transaction.merchant}</p>
+              <p className="text-display text-foreground font-semibold">
+                R$ {transaction.amount.toFixed(2)}
+              </p>
+              <p className="text-caption text-muted-foreground mt-1">{transaction.date}</p>
+            </div>
+          </div>
+        )}
 
         {/* Categories Grid */}
-        <div className="p-6">
-          <p className="text-sm text-muted-foreground mb-4">Toque para categorizar:</p>
+        <div className="px-6 pb-6">
           <div className="grid grid-cols-2 gap-3">
             {categories.map((category, index) => (
               <motion.button
                 key={category.id}
-                className="category-chip flex items-center gap-3 bg-muted hover:bg-primary hover:text-primary-foreground border border-border/50 hover:border-primary/50 text-left"
+                className="flex items-center gap-3 p-4 rounded-2xl bg-muted hover:bg-foreground hover:text-background transition-all duration-300 text-left"
                 onClick={() => onSelect(category.id)}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.04 }}
-                whileHover={{ scale: 1.02 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.03, duration: 0.3 }}
                 whileTap={{ scale: 0.98 }}
               >
-                <div className={`w-8 h-8 rounded-lg ${category.color} flex items-center justify-center`}>
-                  <category.icon className="w-4 h-4 text-white" />
+                <div className="w-10 h-10 rounded-xl bg-background/10 flex items-center justify-center">
+                  <category.icon className="w-5 h-5" />
                 </div>
-                <span className="font-medium">{category.label}</span>
+                <span className="font-medium text-[15px]">{category.label}</span>
               </motion.button>
             ))}
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="p-6 pt-0">
+        {/* Footer - Internal transfer */}
+        <div className="px-6 pb-8">
           <Button 
             variant="outline" 
-            className="w-full" 
+            className="w-full h-13 gap-2" 
             onClick={() => onSelect("interno")}
           >
-            Marcar como movimentação interna
+            <ArrowLeftRight className="w-5 h-5" />
+            Movimentação interna
           </Button>
         </div>
       </motion.div>

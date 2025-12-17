@@ -5,7 +5,6 @@ import {
   FileText, 
   Image, 
   CheckCircle2, 
-  Clock, 
   AlertCircle,
   RefreshCw,
   Inbox
@@ -40,7 +39,6 @@ const Uploads = () => {
       return;
     }
 
-    // Get couple_id from profile
     const { data: profile } = await supabase
       .from("profiles")
       .select("couple_id")
@@ -56,7 +54,6 @@ const Uploads = () => {
       let importRecord: { id: string } | null = null;
       
       try {
-        // Create import record first
         importRecord = await createImport.mutateAsync({
           type,
           file_name: file.name,
@@ -65,20 +62,17 @@ const Uploads = () => {
 
         toast.success(`Enviando ${file.name}`, { description: "Processando..." });
 
-        // Upload file to storage
         const uploadResult = await uploadFile.mutateAsync({
           file,
           coupleId: profile.couple_id,
           type,
         });
 
-        // Update import with file URL
         await supabase
           .from("imports")
           .update({ file_url: uploadResult.path })
           .eq("id", importRecord.id);
 
-        // Call processing edge function
         const functionName = type === "print" ? "process-print" : "process-ofx";
         
         const { data, error } = await supabase.functions.invoke(functionName, {
@@ -99,19 +93,15 @@ const Uploads = () => {
           });
           toast.error(`Erro ao processar ${file.name}`, { description: error.message });
         } else if (data?.success) {
-          // Fallback: invalidate query in case realtime doesn't trigger
           queryClient.invalidateQueries({ queryKey: ["imports"] });
-          
           toast.success(`${file.name} processado!`, {
-            description: `${data.transactionsCreated} novas transações encontradas`,
+            description: `${data.transactionsCreated} novas transações`,
           });
         } else if (data?.error) {
           toast.error(`Erro: ${data.message || data.error}`);
         }
       } catch (error) {
         console.error("Upload error:", error);
-        
-        // Marcar import como falhou se existir
         if (importRecord?.id) {
           await updateStatus.mutateAsync({
             id: importRecord.id,
@@ -119,10 +109,7 @@ const Uploads = () => {
             error_message: error instanceof Error ? error.message : "Erro no upload",
           });
         }
-        
-        toast.error(`Erro ao enviar ${file.name}`, {
-          description: error instanceof Error ? error.message : "Erro desconhecido",
-        });
+        toast.error(`Erro ao enviar ${file.name}`);
       }
     }
   }, [currentMonth, user, createImport, uploadFile, updateStatus, queryClient]);
@@ -163,7 +150,7 @@ const Uploads = () => {
       case "failed":
         return <AlertCircle className="w-5 h-5 text-destructive" />;
       default:
-        return <Clock className="w-5 h-5 text-muted-foreground" />;
+        return null;
     }
   };
 
@@ -171,17 +158,17 @@ const Uploads = () => {
 
   return (
     <AppLayout>
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="space-y-10">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">
-            Upload Semanal
+          <h1 className="text-display text-foreground mb-2">
+            Uploads
           </h1>
-          <p className="text-muted-foreground">
-            Envie prints de cartão e arquivos OFX para importar transações
+          <p className="text-body text-muted-foreground">
+            Envie prints e arquivos OFX
           </p>
         </motion.div>
 
@@ -193,22 +180,24 @@ const Uploads = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
           >
-            <Card variant="glass">
+            <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Image className="w-5 h-5 text-primary" />
-                  Prints de Cartão
+                <CardTitle className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Image className="w-5 h-5 text-primary" />
+                  </div>
+                  Prints
                 </CardTitle>
                 <CardDescription>
-                  Fotos ou screenshots da lista de transações
+                  Screenshots da lista de transações
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <label
-                  className={`relative flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
+                  className={`relative flex flex-col items-center justify-center p-12 border-2 border-dashed rounded-2xl cursor-pointer transition-all duration-300 ${
                     isDraggingPrint
                       ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50 hover:bg-muted/50"
+                      : "border-border hover:border-primary/50 hover:bg-muted/30"
                   }`}
                   onDragOver={(e) => { e.preventDefault(); setIsDraggingPrint(true); }}
                   onDragLeave={() => setIsDraggingPrint(false)}
@@ -221,13 +210,11 @@ const Uploads = () => {
                     className="hidden"
                     onChange={handleFileInputPrint}
                   />
-                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-                    <UploadIcon className="w-8 h-8 text-primary" />
-                  </div>
-                  <p className="text-sm font-medium text-foreground mb-1">
-                    Arraste imagens aqui
+                  <UploadIcon className="w-10 h-10 text-muted-foreground mb-4" strokeWidth={1.5} />
+                  <p className="text-body text-foreground font-medium mb-1">
+                    Arraste imagens
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-caption text-muted-foreground">
                     ou clique para selecionar
                   </p>
                 </label>
@@ -241,22 +228,24 @@ const Uploads = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
-            <Card variant="glass">
+            <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-secondary" />
+                <CardTitle className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center">
+                    <FileText className="w-5 h-5 text-success" />
+                  </div>
                   Arquivos OFX
                 </CardTitle>
                 <CardDescription>
-                  Extrato bancário em formato OFX (até 2 contas)
+                  Extrato bancário em formato OFX
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <label
-                  className={`relative flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
+                  className={`relative flex flex-col items-center justify-center p-12 border-2 border-dashed rounded-2xl cursor-pointer transition-all duration-300 ${
                     isDraggingOfx
-                      ? "border-secondary bg-secondary/5"
-                      : "border-border hover:border-secondary/50 hover:bg-muted/50"
+                      ? "border-success bg-success/5"
+                      : "border-border hover:border-success/50 hover:bg-muted/30"
                   }`}
                   onDragOver={(e) => { e.preventDefault(); setIsDraggingOfx(true); }}
                   onDragLeave={() => setIsDraggingOfx(false)}
@@ -269,13 +258,11 @@ const Uploads = () => {
                     className="hidden"
                     onChange={handleFileInputOfx}
                   />
-                  <div className="w-16 h-16 rounded-2xl bg-secondary/10 flex items-center justify-center mb-4">
-                    <FileText className="w-8 h-8 text-secondary" />
-                  </div>
-                  <p className="text-sm font-medium text-foreground mb-1">
+                  <UploadIcon className="w-10 h-10 text-muted-foreground mb-4" strokeWidth={1.5} />
+                  <p className="text-body text-foreground font-medium mb-1">
                     Arraste arquivos OFX
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-caption text-muted-foreground">
                     ou clique para selecionar
                   </p>
                 </label>
@@ -290,64 +277,56 @@ const Uploads = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <Card variant="glass">
+          <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="w-5 h-5 text-muted-foreground" />
-                Histórico de Uploads
-              </CardTitle>
+              <CardTitle>Histórico</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
                 <div className="space-y-3">
                   {[1, 2, 3].map((i) => (
-                    <Skeleton key={i} className="h-16 w-full" />
+                    <Skeleton key={i} className="h-16 w-full rounded-2xl" />
                   ))}
                 </div>
               ) : !imports || imports.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
-                    <Inbox className="w-8 h-8 text-muted-foreground" />
-                  </div>
-                  <p className="text-muted-foreground mb-2">Nenhum upload ainda</p>
-                  <p className="text-sm text-muted-foreground/70">
-                    Envie prints ou arquivos OFX para começar
-                  </p>
+                <div className="text-center py-16">
+                  <Inbox className="w-12 h-12 text-muted-foreground mx-auto mb-4" strokeWidth={1.5} />
+                  <p className="text-body text-muted-foreground">Nenhum upload ainda</p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {imports.map((upload, index) => (
                     <motion.div
                       key={upload.id}
-                      className="flex items-center gap-4 p-4 rounded-xl bg-muted/50"
+                      className="flex items-center gap-4 p-4 rounded-2xl bg-muted/30"
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.05 }}
+                      transition={{ delay: index * 0.03 }}
                     >
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                        upload.type === "print" ? "bg-primary/10" : "bg-secondary/10"
+                        upload.type === "print" ? "bg-primary/10" : "bg-success/10"
                       }`}>
                         {upload.type === "print" ? (
                           <Image className="w-5 h-5 text-primary" />
                         ) : (
-                          <FileText className="w-5 h-5 text-secondary" />
+                          <FileText className="w-5 h-5 text-success" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-foreground truncate">
+                        <p className="text-body text-foreground font-medium truncate">
                           {upload.file_name || `${upload.type} upload`}
                         </p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-caption text-muted-foreground">
                           {upload.status === "completed" && upload.transactions_count !== null && (
-                            <span className="text-success">{upload.transactions_count} transações encontradas</span>
+                            <span className="text-success">{upload.transactions_count} transações</span>
                           )}
                           {(upload.status === "processing" || upload.status === "pending") && (
                             <span className="text-primary">Processando...</span>
                           )}
                           {upload.status === "failed" && (
-                            <span className="text-destructive">{upload.error_message || "Erro no processamento"}</span>
+                            <span className="text-destructive">Erro</span>
                           )}
-                          <span className="mx-2">•</span>
+                          <span className="mx-2">·</span>
                           {formatDistanceToNow(new Date(upload.created_at), { 
                             addSuffix: true, 
                             locale: ptBR 

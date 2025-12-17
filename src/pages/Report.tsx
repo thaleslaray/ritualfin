@@ -47,10 +47,9 @@ const Report = () => {
     }
     const monthName = formatMonthName(currentMonth.year_month);
     exportTransactionsToCsv(allTransactions, categoryBudgets, monthName);
-    toast.success("CSV exportado com sucesso!");
+    toast.success("CSV exportado!");
   };
 
-  // Build report data from real data
   const categories = categoryBudgets.map(budget => ({
     id: budget.category,
     planned: Number(budget.planned_amount),
@@ -79,7 +78,7 @@ const Report = () => {
     return (
       <AppLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
         </div>
       </AppLayout>
     );
@@ -88,17 +87,15 @@ const Report = () => {
   if (!currentMonth) {
     return (
       <AppLayout>
-        <div className="max-w-4xl mx-auto">
-          <Card variant="glass" className="text-center py-12">
+        <div className="max-w-lg mx-auto">
+          <Card className="text-center py-16">
             <CardContent>
-              <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
-                <FileText className="w-8 h-8 text-muted-foreground" />
-              </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">
+              <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" strokeWidth={1.5} />
+              <h3 className="text-title text-foreground mb-2">
                 Nenhum mês criado
               </h3>
-              <p className="text-muted-foreground">
-                Crie um mês na página de Orçamento para ver o relatório.
+              <p className="text-body text-muted-foreground">
+                Crie um mês na página de Orçamento.
               </p>
             </CardContent>
           </Card>
@@ -109,43 +106,66 @@ const Report = () => {
 
   return (
     <AppLayout>
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="space-y-10">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+          className="flex flex-col sm:flex-row sm:items-end justify-between gap-4"
         >
           <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-2 capitalize">
-              Relatório {formatMonthName(currentMonth.year_month)}
+            <h1 className="text-display text-foreground mb-2 capitalize">
+              {formatMonthName(currentMonth.year_month)}
             </h1>
-            <p className="text-muted-foreground">
-              Planejado vs Real por categoria
+            <p className="text-body text-muted-foreground">
+              Planejado vs Real
               {currentMonth.edited_after_close && (
-                <span className="ml-2 text-warning-foreground text-sm">
-                  (editado após fechamento)
-                </span>
+                <span className="ml-2 text-warning text-caption">(editado)</span>
               )}
             </p>
           </div>
           <Button variant="outline" className="gap-2" onClick={handleExportCsv}>
             <Download className="w-4 h-4" />
-            Exportar CSV
+            Exportar
           </Button>
         </motion.div>
 
-        {/* Summary Cards */}
-        <div className="grid sm:grid-cols-3 gap-4">
+        {/* Hero Number */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.1 }}
+          className="text-center py-8"
+        >
+          <p className="text-caption text-muted-foreground mb-2">
+            {isPositive ? "Economia" : "Acima do orçamento"}
+          </p>
+          <div className="flex items-center justify-center gap-3">
+            {isPositive ? (
+              <TrendingUp className="w-10 h-10 text-success" strokeWidth={1.5} />
+            ) : (
+              <TrendingDown className="w-10 h-10 text-destructive" strokeWidth={1.5} />
+            )}
+            <p className={`hero-number ${isPositive ? "text-success" : "text-destructive"}`}>
+              R$ {Math.abs(savings).toLocaleString('pt-BR')}
+            </p>
+          </div>
+          <p className={`text-body mt-2 ${isPositive ? "text-success" : "text-destructive"}`}>
+            {savingsPercentage}% {isPositive ? "economizado" : "acima"}
+          </p>
+        </motion.div>
+
+        {/* Stats */}
+        <div className="grid sm:grid-cols-2 gap-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
+            transition={{ delay: 0.2 }}
           >
-            <Card variant="glass">
+            <Card variant="filled">
               <CardContent className="p-6 text-center">
-                <p className="text-sm text-muted-foreground mb-2">Total Planejado</p>
-                <p className="text-3xl font-bold text-foreground">
+                <p className="text-caption text-muted-foreground mb-1">Planejado</p>
+                <p className="text-headline text-foreground">
                   R$ {totalPlanned.toLocaleString('pt-BR')}
                 </p>
               </CardContent>
@@ -155,38 +175,13 @@ const Report = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
+            transition={{ delay: 0.25 }}
           >
-            <Card variant="glass">
+            <Card variant="filled">
               <CardContent className="p-6 text-center">
-                <p className="text-sm text-muted-foreground mb-2">Total Real</p>
-                <p className="text-3xl font-bold text-foreground">
+                <p className="text-caption text-muted-foreground mb-1">Real</p>
+                <p className="text-headline text-foreground">
                   R$ {totalActual.toLocaleString('pt-BR')}
-                </p>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <Card variant={isPositive ? "glass" : "glass"} className={isPositive ? "border-success/30" : "border-destructive/30"}>
-              <CardContent className="p-6 text-center">
-                <p className="text-sm text-muted-foreground mb-2">Saldo</p>
-                <div className="flex items-center justify-center gap-2">
-                  {isPositive ? (
-                    <TrendingUp className="w-6 h-6 text-success" />
-                  ) : (
-                    <TrendingDown className="w-6 h-6 text-destructive" />
-                  )}
-                  <p className={`text-3xl font-bold ${isPositive ? "text-success" : "text-destructive"}`}>
-                    {isPositive ? "+" : ""}R$ {Math.abs(savings).toLocaleString('pt-BR')}
-                  </p>
-                </div>
-                <p className={`text-sm mt-1 ${isPositive ? "text-success" : "text-destructive"}`}>
-                  {savingsPercentage}% {isPositive ? "economizado" : "acima"}
                 </p>
               </CardContent>
             </Card>
@@ -198,19 +193,18 @@ const Report = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
+            transition={{ delay: 0.3 }}
           >
-            <Card variant="glass" className="border-warning/50 bg-warning/5">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <AlertTriangle className="w-5 h-5 text-warning-foreground shrink-0" />
+            <Card variant="filled" className="border border-warning/30">
+              <CardContent className="p-5">
+                <div className="flex items-center gap-4">
+                  <AlertTriangle className="w-6 h-6 text-warning shrink-0" />
                   <div>
-                    <p className="font-medium text-foreground">
+                    <p className="text-body text-foreground font-medium">
                       Categorias acima do orçamento
                     </p>
-                    <p className="text-sm text-muted-foreground">
-                      {overBudgetCategories.map(id => getCategoryInfo(id)?.label).join(", ")} 
-                      {" "}ultrapassaram o planejado este mês
+                    <p className="text-caption text-muted-foreground">
+                      {overBudgetCategories.map(id => getCategoryInfo(id)?.label).join(", ")}
                     </p>
                   </div>
                 </div>
@@ -224,14 +218,11 @@ const Report = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
+            transition={{ delay: 0.35 }}
           >
-            <Card variant="glass">
+            <Card>
               <CardHeader>
-                <CardTitle>Planejado vs Real</CardTitle>
-                <CardDescription>
-                  Comparação por categoria com indicadores de estouro
-                </CardDescription>
+                <CardTitle>Por Categoria</CardTitle>
               </CardHeader>
               <CardContent>
                 <BudgetComparison categories={categories} />
@@ -245,31 +236,30 @@ const Report = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.55 }}
+            transition={{ delay: 0.4 }}
           >
-            <Card variant="glass">
+            <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CreditCard className="w-5 h-5 text-primary" />
+                <CardTitle className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <CreditCard className="w-5 h-5 text-primary" />
+                  </div>
                   Teto dos Cartões
                 </CardTitle>
-                <CardDescription>
-                  Acompanhe o uso vs limite de cada cartão
-                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-5">
                 {cardUsage.map((card, index) => (
                   <motion.div
                     key={card.cardId}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.55 + index * 0.05 }}
+                    transition={{ delay: 0.4 + index * 0.05 }}
                     className="space-y-2"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-medium text-foreground">{card.cardName}</span>
+                      <span className="text-body text-foreground font-medium">{card.cardName}</span>
                       <div className="flex items-center gap-2">
-                        <span className={`text-sm font-semibold ${card.isOverLimit ? "text-destructive" : "text-foreground"}`}>
+                        <span className={`text-caption font-semibold ${card.isOverLimit ? "text-destructive" : "text-foreground"}`}>
                           R$ {card.totalSpent.toLocaleString('pt-BR')} / R$ {card.monthlyLimit.toLocaleString('pt-BR')}
                         </span>
                         {card.isOverLimit && (
@@ -277,20 +267,12 @@ const Report = () => {
                         )}
                       </div>
                     </div>
-                    <div className="relative">
-                      <Progress 
-                        value={Math.min(card.percentage, 100)} 
-                        className={`h-2 ${card.isOverLimit ? "[&>div]:bg-destructive" : ""}`}
-                      />
-                      {card.isOverLimit && (
-                        <div 
-                          className="absolute top-0 h-2 w-0.5 bg-destructive" 
-                          style={{ left: `${(card.monthlyLimit / card.totalSpent) * 100}%` }}
-                        />
-                      )}
-                    </div>
-                    <p className={`text-xs ${card.isOverLimit ? "text-destructive" : "text-muted-foreground"}`}>
-                      {card.percentage}% do limite {card.isOverLimit && `(+R$ ${(card.totalSpent - card.monthlyLimit).toLocaleString('pt-BR')} acima)`}
+                    <Progress 
+                      value={Math.min(card.percentage, 100)} 
+                      className={`h-2 ${card.isOverLimit ? "[&>div]:bg-destructive" : ""}`}
+                    />
+                    <p className={`text-footnote ${card.isOverLimit ? "text-destructive" : "text-muted-foreground"}`}>
+                      {card.percentage}% do limite
                     </p>
                   </motion.div>
                 ))}
@@ -304,13 +286,13 @@ const Report = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
+            transition={{ delay: 0.45 }}
           >
-            <Card variant="glass">
+            <Card>
               <CardHeader>
-                <CardTitle>Detalhes por Categoria</CardTitle>
+                <CardTitle>Detalhes</CardTitle>
                 <CardDescription>
-                  Clique para ver as transações de cada categoria
+                  Toque para ver transações
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-2">
@@ -329,28 +311,28 @@ const Report = () => {
                       key={category.id}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.6 + index * 0.05 }}
+                      transition={{ delay: 0.45 + index * 0.03 }}
                     >
                       <button
-                        className={`w-full p-4 rounded-xl text-left transition-all ${
-                          isExpanded ? "bg-muted" : "bg-muted/50 hover:bg-muted"
+                        className={`w-full p-4 rounded-2xl text-left transition-all duration-200 ${
+                          isExpanded ? "bg-muted" : "bg-muted/30 hover:bg-muted/50"
                         }`}
                         onClick={() => setExpandedCategory(isExpanded ? null : category.id)}
                       >
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-xl ${info.color} flex items-center justify-center`}>
-                              <info.icon className="w-5 h-5 text-white" />
+                          <div className="flex items-center gap-4">
+                            <div className="w-11 h-11 rounded-xl bg-foreground/10 flex items-center justify-center">
+                              <info.icon className="w-5 h-5 text-foreground" />
                             </div>
                             <div>
-                              <p className="font-medium text-foreground">{info.label}</p>
-                              <p className="text-sm text-muted-foreground">
+                              <p className="text-body text-foreground font-medium">{info.label}</p>
+                              <p className="text-caption text-muted-foreground">
                                 R$ {category.actual.toLocaleString('pt-BR')} / R$ {category.planned.toLocaleString('pt-BR')}
                               </p>
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
-                            <span className={`text-sm font-semibold ${isOverBudget ? "text-destructive" : "text-success"}`}>
+                            <span className={`text-caption font-semibold ${isOverBudget ? "text-destructive" : "text-success"}`}>
                               {percentage}%
                             </span>
                             {isOverBudget ? (
@@ -368,27 +350,27 @@ const Report = () => {
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: "auto" }}
                           exit={{ opacity: 0, height: 0 }}
-                          className="p-4 bg-muted/30 rounded-b-xl -mt-2 pt-6"
+                          className="px-4 pb-4 pt-2"
                         >
                           {isLoadingCategoryTx ? (
                             <div className="flex justify-center py-4">
                               <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
                             </div>
                           ) : categoryTransactions.length === 0 ? (
-                            <p className="text-sm text-muted-foreground text-center py-4">
-                              Nenhuma transação nesta categoria
+                            <p className="text-caption text-muted-foreground text-center py-4">
+                              Nenhuma transação
                             </p>
                           ) : (
                             <div className="space-y-2">
                               {categoryTransactions.map(tx => (
-                                <div key={tx.id} className="flex items-center justify-between py-2 px-3 bg-background/50 rounded-lg">
+                                <div key={tx.id} className="flex items-center justify-between py-3 px-4 bg-background rounded-xl">
                                   <div>
-                                    <p className="text-sm font-medium text-foreground">{tx.merchant}</p>
-                                    <p className="text-xs text-muted-foreground">
-                                      {format(new Date(tx.transaction_date), "dd/MM/yyyy", { locale: ptBR })}
+                                    <p className="text-caption text-foreground font-medium">{tx.merchant}</p>
+                                    <p className="text-footnote text-muted-foreground">
+                                      {format(new Date(tx.transaction_date), "dd/MM", { locale: ptBR })}
                                     </p>
                                   </div>
-                                  <p className="text-sm font-semibold text-foreground">
+                                  <p className="text-caption text-foreground font-semibold">
                                     R$ {Number(tx.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                   </p>
                                 </div>
@@ -406,10 +388,10 @@ const Report = () => {
         )}
 
         {categories.length === 0 && (
-          <Card variant="glass" className="text-center py-12">
+          <Card className="text-center py-16">
             <CardContent>
-              <p className="text-muted-foreground">
-                Nenhuma categoria configurada para este mês.
+              <p className="text-body text-muted-foreground">
+                Nenhuma categoria configurada.
               </p>
             </CardContent>
           </Card>
