@@ -1,6 +1,8 @@
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   ChevronRight,
   Loader2,
+  ArrowRight,
   Upload,
   AlertCircle,
   CheckCircle2
@@ -57,6 +59,7 @@ const Index = () => {
   };
 
   const isFirstDayOfMonth = new Date().getDate() <= 5;
+
   const totalPlanned = categoryBudgets?.reduce((sum, cat) => sum + (cat.planned_amount || 0), 0) || 0;
   const totalActual = summary?.total || 0;
   const savingsAmount = totalPlanned - totalActual;
@@ -67,7 +70,7 @@ const Index = () => {
     return (
       <AppLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
         </div>
       </AppLayout>
     );
@@ -92,22 +95,37 @@ const Index = () => {
   if (!currentMonth) {
     return (
       <AppLayout>
-        {showOnboarding && (
-          <OnboardingWizard 
-            onComplete={completeOnboarding} 
-            onSkip={skipOnboarding} 
-          />
-        )}
-        <div className="max-w-md mx-auto text-center py-16">
-          <h1 className="text-headline text-foreground mb-2">
-            Primeiro mês
-          </h1>
-          <p className="text-body text-muted-foreground mb-6">
-            Configure seu orçamento mensal em menos de 10 minutos.
-          </p>
-          <Link to="/budget">
-            <Button>Começar</Button>
-          </Link>
+        <AnimatePresence>
+          {showOnboarding && (
+            <OnboardingWizard 
+              onComplete={completeOnboarding} 
+              onSkip={skipOnboarding} 
+            />
+          )}
+        </AnimatePresence>
+        <div className="max-w-lg mx-auto text-center py-20">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
+          >
+            <div className="w-20 h-20 rounded-3xl bg-foreground flex items-center justify-center mx-auto mb-8">
+              <span className="text-background font-bold text-4xl">R</span>
+            </div>
+            <h1 className="text-display text-foreground mb-4">
+              Primeiro mês
+            </h1>
+            <p className="text-body text-muted-foreground mb-10 max-w-sm mx-auto">
+              Configure seu orçamento mensal em menos de 10 minutos. 
+              É o primeiro passo para clareza financeira.
+            </p>
+            <Link to="/budget">
+              <Button variant="hero" size="lg" className="gap-2">
+                <span>Começar</span>
+                <ArrowRight className="w-5 h-5" />
+              </Button>
+            </Link>
+          </motion.div>
         </div>
       </AppLayout>
     );
@@ -115,12 +133,17 @@ const Index = () => {
 
   return (
     <AppLayout>
-      <div className="space-y-8">
+      <div className="space-y-10">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="flex flex-col sm:flex-row sm:items-end justify-between gap-4"
+        >
           <div>
-            <div className="flex items-center gap-3 mb-1">
-              <h1 className="text-headline text-foreground capitalize">
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-display text-foreground capitalize">
                 {getMonthName()}
               </h1>
               {currentMonth.closed_at && <RitualBadge />}
@@ -130,21 +153,27 @@ const Index = () => {
             </p>
           </div>
           <Link to="/budget">
-            <Button variant="outline">
+            <Button variant="default" className="gap-2">
               Ritual Dia 1
+              <ArrowRight className="w-4 h-4" />
             </Button>
           </Link>
-        </div>
+        </motion.div>
 
         {/* Hero Number */}
-        <div className="text-center py-6">
-          <p className="text-caption text-muted-foreground mb-1">
-            {isPositive ? "Economia" : "Acima do orçamento"}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="text-center py-8"
+        >
+          <p className="text-caption text-muted-foreground mb-2">
+            {isPositive ? "Economia do mês" : "Acima do orçamento"}
           </p>
-          <p className={`text-headline ${isPositive ? "" : ""}`}>
+          <p className={`hero-number ${isPositive ? "text-success" : "text-destructive"}`}>
             {isPositive ? "+" : "-"}R$ {Math.abs(savingsAmount).toLocaleString('pt-BR')}
           </p>
-        </div>
+        </motion.div>
 
         {/* Next Step Card */}
         <NextStepCard
@@ -165,76 +194,116 @@ const Index = () => {
           />
         )}
 
-        {/* Stats */}
+        {/* Stats Grid */}
         <div className="grid sm:grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-caption text-muted-foreground mb-1">Planejado</p>
-              <p className="text-body font-medium text-foreground">
-                R$ {totalPlanned.toLocaleString('pt-BR')}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-caption text-muted-foreground mb-1">Real</p>
-              <p className="text-body font-medium text-foreground">
-                R$ {totalActual.toLocaleString('pt-BR')}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Link to="/report">
-            <Card className="hover:bg-muted/50 cursor-pointer h-full">
-              <CardContent className="p-4 text-center">
-                <p className="text-caption text-muted-foreground mb-1">Relatório</p>
-                <div className="flex items-center justify-center gap-1 text-foreground">
-                  <span className="text-body font-medium">Ver</span>
-                  <ChevronRight className="w-4 h-4" />
-                </div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <Card variant="filled">
+              <CardContent className="p-6 text-center">
+                <p className="text-caption text-muted-foreground mb-1">Planejado</p>
+                <p className="text-headline text-foreground">
+                  R$ {totalPlanned.toLocaleString('pt-BR')}
+                </p>
               </CardContent>
             </Card>
-          </Link>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+          >
+            <Card variant="filled">
+              <CardContent className="p-6 text-center">
+                <p className="text-caption text-muted-foreground mb-1">Real</p>
+                <p className="text-headline text-foreground">
+                  R$ {totalActual.toLocaleString('pt-BR')}
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <Link to="/report">
+              <Card variant="filled" className="hover:bg-muted/80 transition-colors cursor-pointer">
+                <CardContent className="p-6 text-center">
+                  <p className="text-caption text-muted-foreground mb-1">Relatório</p>
+                  <div className="flex items-center justify-center gap-2 text-primary">
+                    <span className="text-body font-medium">Ver detalhes</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          </motion.div>
         </div>
 
         {/* Action Cards */}
         <div className="grid sm:grid-cols-2 gap-4">
-          <Link to="/uploads">
-            <Card className="hover:bg-muted/50 cursor-pointer">
-              <CardContent className="p-4 flex items-center gap-4">
-                <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center shrink-0">
-                  <Upload className="w-5 h-5 text-foreground" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-body font-medium text-foreground">Upload</p>
-                  <p className="text-caption text-muted-foreground">Prints e OFX</p>
-                </div>
-                <ChevronRight className="w-4 h-4 text-muted-foreground" />
-              </CardContent>
-            </Card>
-          </Link>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+          >
+            <Link to="/uploads">
+              <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer h-full">
+                <CardContent className="p-6 flex items-center gap-5">
+                  <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
+                    <Upload className="w-7 h-7 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-title text-foreground mb-1">Upload Semanal</p>
+                    <p className="text-caption text-muted-foreground">
+                      Envie prints e OFX
+                    </p>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                </CardContent>
+              </Card>
+            </Link>
+          </motion.div>
 
-          <Link to="/transactions">
-            <Card className={`hover:bg-muted/50 cursor-pointer ${pendingCount > 0 ? "border-foreground" : ""}`}>
-              <CardContent className="p-4 flex items-center gap-4">
-                <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center shrink-0">
-                  {pendingCount > 0 ? (
-                    <AlertCircle className="w-5 h-5 text-foreground" />
-                  ) : (
-                    <CheckCircle2 className="w-5 h-5 text-foreground" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <p className="text-body font-medium text-foreground">Transações</p>
-                  <p className="text-caption text-muted-foreground">
-                    {pendingCount > 0 ? `${pendingCount} pendentes` : "Tudo ok"}
-                  </p>
-                </div>
-                <ChevronRight className="w-4 h-4 text-muted-foreground" />
-              </CardContent>
-            </Card>
-          </Link>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <Link to="/transactions">
+              <Card className={`hover:shadow-lg transition-all duration-300 cursor-pointer h-full ${pendingCount > 0 ? "ring-2 ring-warning/50" : ""}`}>
+                <CardContent className="p-6 flex items-center gap-5">
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${
+                    pendingCount > 0 ? "bg-warning/10" : "bg-success/10"
+                  }`}>
+                    {pendingCount > 0 ? (
+                      <AlertCircle className="w-7 h-7 text-warning" />
+                    ) : (
+                      <CheckCircle2 className="w-7 h-7 text-success" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-title text-foreground mb-1">Transações</p>
+                    {pendingCount > 0 ? (
+                      <p className="text-caption text-warning font-medium">
+                        {pendingCount} pendentes
+                      </p>
+                    ) : (
+                      <p className="text-caption text-success">
+                        Tudo categorizado
+                      </p>
+                    )}
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                </CardContent>
+              </Card>
+            </Link>
+          </motion.div>
         </div>
       </div>
     </AppLayout>

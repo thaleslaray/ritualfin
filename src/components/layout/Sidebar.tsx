@@ -1,16 +1,28 @@
+import { motion } from "framer-motion";
+import { 
+  Home, 
+  FileText, 
+  Upload, 
+  Inbox, 
+  BarChart3, 
+  Settings, 
+  LogOut,
+  Menu,
+  X 
+} from "lucide-react";
 import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
+import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
-/* Dieter Rams: Text-only navigation, no icons */
 const navItems = [
-  { label: "Início", path: "/" },
-  { label: "Orçamento", path: "/budget" },
-  { label: "Uploads", path: "/uploads" },
-  { label: "Transações", path: "/transactions" },
-  { label: "Relatório", path: "/report" },
+  { icon: Home, label: "Início", path: "/" },
+  { icon: FileText, label: "Orçamento", path: "/budget" },
+  { icon: Upload, label: "Uploads", path: "/uploads" },
+  { icon: Inbox, label: "Transações", path: "/transactions" },
+  { icon: BarChart3, label: "Relatório", path: "/report" },
 ];
 
 export const Sidebar = () => {
@@ -26,75 +38,87 @@ export const Sidebar = () => {
 
   return (
     <>
-      {/* Mobile header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-12 bg-background border-b border-border z-50 px-4 flex items-center justify-between">
-        <span className="text-body font-medium">Ritual</span>
-        <Button variant="ghost" size="icon-sm" onClick={() => setIsOpen(!isOpen)}>
+      {/* Mobile header - Frosted glass */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-background/80 backdrop-blur-xl border-b border-border/50 z-50 px-4 flex items-center justify-between">
+        <Logo />
+        <Button 
+          variant="ghost" 
+          size="icon-sm" 
+          onClick={() => setIsOpen(!isOpen)}
+          className="rounded-full"
+        >
           {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </Button>
       </div>
 
       {/* Mobile overlay */}
       {isOpen && (
-        <div 
-          className="lg:hidden fixed inset-0 bg-foreground/5 z-40"
+        <motion.div 
+          className="lg:hidden fixed inset-0 bg-foreground/10 backdrop-blur-sm z-40"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           onClick={() => setIsOpen(false)}
         />
       )}
 
       {/* Sidebar */}
-      <aside
-        className={`fixed lg:sticky top-0 left-0 h-screen w-56 bg-background border-r border-border z-50 lg:z-0 flex flex-col ${
+      <motion.aside
+        className={`fixed lg:sticky top-0 left-0 h-screen w-72 bg-sidebar border-r border-sidebar-border z-50 lg:z-0 flex flex-col ${
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        } transition-transform duration-150`}
+        } transition-transform duration-300 ease-apple`}
       >
-        {/* Logo - text only */}
+        {/* Logo */}
         <div className="p-6 pb-8">
-          <span className="text-headline">Ritual</span>
+          <Logo />
         </div>
 
-        {/* Navigation - text only */}
+        {/* Navigation */}
         <nav className="flex-1 px-4 space-y-1">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
               <Link key={item.path} to={item.path} onClick={() => setIsOpen(false)}>
-                <div
-                  className={`px-3 py-2 rounded-md text-body transition-colors ${
+                <motion.div
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
                     isActive
-                      ? "bg-foreground text-background font-medium"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                      ? "bg-foreground text-background"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                   }`}
+                  whileTap={{ scale: 0.98 }}
                 >
-                  {item.label}
-                </div>
+                  <item.icon className="w-5 h-5" strokeWidth={isActive ? 2 : 1.5} />
+                  <span className="font-medium text-[15px]">{item.label}</span>
+                </motion.div>
               </Link>
             );
           })}
         </nav>
 
         {/* Bottom section */}
-        <div className="p-4 space-y-1 border-t border-border">
+        <div className="p-4 space-y-1 border-t border-sidebar-border">
           <Link to="/settings" onClick={() => setIsOpen(false)}>
-            <div
-              className={`px-3 py-2 rounded-md text-body transition-colors ${
+            <motion.div
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
                 location.pathname === "/settings"
-                  ? "bg-foreground text-background font-medium"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  ? "bg-foreground text-background"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
               }`}
+              whileTap={{ scale: 0.98 }}
             >
-              Configurações
-            </div>
+              <Settings className="w-5 h-5" strokeWidth={location.pathname === "/settings" ? 2 : 1.5} />
+              <span className="font-medium text-[15px]">Configurações</span>
+            </motion.div>
           </Link>
           
           <button
             onClick={handleLogout}
-            className="w-full px-3 py-2 rounded-md text-body text-left text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
           >
-            Sair
+            <LogOut className="w-5 h-5" strokeWidth={1.5} />
+            <span className="font-medium text-[15px]">Sair</span>
           </button>
         </div>
-      </aside>
+      </motion.aside>
     </>
   );
 };

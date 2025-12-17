@@ -162,10 +162,10 @@ const Report = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
-            <Card>
-              <CardContent className="p-4 text-center">
+            <Card variant="filled">
+              <CardContent className="p-6 text-center">
                 <p className="text-caption text-muted-foreground mb-1">Planejado</p>
-                <p className="text-body font-medium text-foreground">
+                <p className="text-headline text-foreground">
                   R$ {totalPlanned.toLocaleString('pt-BR')}
                 </p>
               </CardContent>
@@ -177,10 +177,10 @@ const Report = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.25 }}
           >
-            <Card>
-              <CardContent className="p-4 text-center">
+            <Card variant="filled">
+              <CardContent className="p-6 text-center">
                 <p className="text-caption text-muted-foreground mb-1">Real</p>
-                <p className="text-body font-medium text-foreground">
+                <p className="text-headline text-foreground">
                   R$ {totalActual.toLocaleString('pt-BR')}
                 </p>
               </CardContent>
@@ -195,7 +195,7 @@ const Report = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
           >
-            <Card className="border-foreground">
+            <Card variant="filled" className="border border-warning/30">
               <CardContent className="p-5">
                 <div className="flex items-center gap-4">
                   <AlertTriangle className="w-6 h-6 text-warning shrink-0" />
