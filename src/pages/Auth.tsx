@@ -1,14 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Logo } from '@/components/brand/Logo';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import { Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -38,7 +36,6 @@ export default function Auth() {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Redirect if already logged in
   if (user) {
     navigate('/');
     return null;
@@ -112,26 +109,11 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
-        className="w-full max-w-sm"
-      >
-        {/* Logo & Hero Text */}
-        <div className="text-center mb-12">
-          <motion.div 
-            className="flex justify-center mb-8"
-            initial={{ scale: 0.9 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-          >
-            <div className="w-16 h-16 rounded-2xl bg-foreground flex items-center justify-center">
-              <span className="text-background font-bold text-3xl">R</span>
-            </div>
-          </motion.div>
-          <h1 className="text-headline text-foreground mb-3">
-            {isLogin ? 'Bem-vindo de volta' : 'Crie sua conta'}
+      <div className="w-full max-w-sm">
+        {/* Header */}
+        <div className="text-center mb-10">
+          <h1 className="text-headline text-foreground mb-2">
+            {isLogin ? 'Entrar' : 'Criar conta'}
           </h1>
           <p className="text-body text-muted-foreground">
             Clareza financeira para o seu casal.
@@ -139,36 +121,26 @@ export default function Auth() {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <AnimatePresence mode="wait">
-            {!isLogin && (
-              <motion.div
-                key="fullName"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <div className="space-y-2">
-                  <Label htmlFor="fullName" className="text-caption text-muted-foreground">Nome completo</Label>
-                  <Input
-                    id="fullName"
-                    name="fullName"
-                    type="text"
-                    placeholder="João Silva"
-                    value={formData.fullName}
-                    onChange={handleChange}
-                  />
-                  {errors.fullName && (
-                    <p className="text-footnote text-destructive">{errors.fullName}</p>
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {!isLogin && (
+            <div className="space-y-2">
+              <Label htmlFor="fullName" className="text-caption">Nome completo</Label>
+              <Input
+                id="fullName"
+                name="fullName"
+                type="text"
+                placeholder="João Silva"
+                value={formData.fullName}
+                onChange={handleChange}
+              />
+              {errors.fullName && (
+                <p className="text-caption text-destructive">{errors.fullName}</p>
+              )}
+            </div>
+          )}
 
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-caption text-muted-foreground">Email</Label>
+            <Label htmlFor="email" className="text-caption">Email</Label>
             <Input
               id="email"
               name="email"
@@ -178,12 +150,12 @@ export default function Auth() {
               onChange={handleChange}
             />
             {errors.email && (
-              <p className="text-footnote text-destructive">{errors.email}</p>
+              <p className="text-caption text-destructive">{errors.email}</p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password" className="text-caption text-muted-foreground">Senha</Label>
+            <Label htmlFor="password" className="text-caption">Senha</Label>
             <div className="relative">
               <Input
                 id="password"
@@ -192,83 +164,65 @@ export default function Auth() {
                 placeholder="••••••••"
                 value={formData.password}
                 onChange={handleChange}
-                className="pr-12"
+                className="pr-10"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
-                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
             {errors.password && (
-              <p className="text-footnote text-destructive">{errors.password}</p>
+              <p className="text-caption text-destructive">{errors.password}</p>
             )}
           </div>
 
-          <AnimatePresence mode="wait">
-            {!isLogin && (
-              <motion.div
-                key="confirmPassword"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword" className="text-caption text-muted-foreground">Confirmar senha</Label>
-                  <Input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                  />
-                  {errors.confirmPassword && (
-                    <p className="text-footnote text-destructive">{errors.confirmPassword}</p>
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {!isLogin && (
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword" className="text-caption">Confirmar senha</Label>
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="••••••••"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+              />
+              {errors.confirmPassword && (
+                <p className="text-caption text-destructive">{errors.confirmPassword}</p>
+              )}
+            </div>
+          )}
 
           <Button 
             type="submit" 
-            variant="hero" 
-            className="w-full h-13 mt-8" 
+            className="w-full mt-6" 
             disabled={loading}
           >
             {loading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
+              <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
-              <>
-                <span>{isLogin ? 'Continuar' : 'Criar conta'}</span>
-                <ArrowRight className="w-5 h-5" />
-              </>
+              isLogin ? 'Continuar' : 'Criar conta'
             )}
           </Button>
         </form>
 
         {/* Toggle */}
-        <div className="mt-8 text-center">
+        <div className="mt-6 text-center">
           <button
             type="button"
             onClick={() => {
               setIsLogin(!isLogin);
               setErrors({});
             }}
-            className="text-body text-muted-foreground hover:text-foreground transition-colors"
+            className="text-body text-muted-foreground hover:text-foreground"
           >
-            {isLogin ? (
-              <>Não tem conta? <span className="text-primary font-medium">Criar agora</span></>
-            ) : (
-              <>Já tem conta? <span className="text-primary font-medium">Entrar</span></>
-            )}
+            {isLogin ? 'Não tem conta? Criar' : 'Já tem conta? Entrar'}
           </button>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }

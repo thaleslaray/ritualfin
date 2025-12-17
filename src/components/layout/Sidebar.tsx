@@ -1,28 +1,16 @@
-import { motion } from "framer-motion";
-import { 
-  Home, 
-  FileText, 
-  Upload, 
-  Inbox, 
-  BarChart3, 
-  Settings, 
-  LogOut,
-  Menu,
-  X 
-} from "lucide-react";
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Logo } from "@/components/brand/Logo";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
 
+/* Dieter Rams: Text-only navigation, no icons */
 const navItems = [
-  { icon: Home, label: "Início", path: "/" },
-  { icon: FileText, label: "Orçamento", path: "/budget" },
-  { icon: Upload, label: "Uploads", path: "/uploads" },
-  { icon: Inbox, label: "Transações", path: "/transactions" },
-  { icon: BarChart3, label: "Relatório", path: "/report" },
+  { label: "Início", path: "/" },
+  { label: "Orçamento", path: "/budget" },
+  { label: "Uploads", path: "/uploads" },
+  { label: "Transações", path: "/transactions" },
+  { label: "Relatório", path: "/report" },
 ];
 
 export const Sidebar = () => {
@@ -38,87 +26,75 @@ export const Sidebar = () => {
 
   return (
     <>
-      {/* Mobile header - Frosted glass */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-background/80 backdrop-blur-xl border-b border-border/50 z-50 px-4 flex items-center justify-between">
-        <Logo />
-        <Button 
-          variant="ghost" 
-          size="icon-sm" 
-          onClick={() => setIsOpen(!isOpen)}
-          className="rounded-full"
-        >
+      {/* Mobile header */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-12 bg-background border-b border-border z-50 px-4 flex items-center justify-between">
+        <span className="text-body font-medium">Ritual</span>
+        <Button variant="ghost" size="icon-sm" onClick={() => setIsOpen(!isOpen)}>
           {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </Button>
       </div>
 
       {/* Mobile overlay */}
       {isOpen && (
-        <motion.div 
-          className="lg:hidden fixed inset-0 bg-foreground/10 backdrop-blur-sm z-40"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+        <div 
+          className="lg:hidden fixed inset-0 bg-foreground/5 z-40"
           onClick={() => setIsOpen(false)}
         />
       )}
 
       {/* Sidebar */}
-      <motion.aside
-        className={`fixed lg:sticky top-0 left-0 h-screen w-72 bg-sidebar border-r border-sidebar-border z-50 lg:z-0 flex flex-col ${
+      <aside
+        className={`fixed lg:sticky top-0 left-0 h-screen w-56 bg-background border-r border-border z-50 lg:z-0 flex flex-col ${
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        } transition-transform duration-300 ease-apple`}
+        } transition-transform duration-150`}
       >
-        {/* Logo */}
+        {/* Logo - text only */}
         <div className="p-6 pb-8">
-          <Logo />
+          <span className="text-headline">Ritual</span>
         </div>
 
-        {/* Navigation */}
+        {/* Navigation - text only */}
         <nav className="flex-1 px-4 space-y-1">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
               <Link key={item.path} to={item.path} onClick={() => setIsOpen(false)}>
-                <motion.div
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+                <div
+                  className={`px-3 py-2 rounded-md text-body transition-colors ${
                     isActive
-                      ? "bg-foreground text-background"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                      ? "bg-foreground text-background font-medium"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
                   }`}
-                  whileTap={{ scale: 0.98 }}
                 >
-                  <item.icon className="w-5 h-5" strokeWidth={isActive ? 2 : 1.5} />
-                  <span className="font-medium text-[15px]">{item.label}</span>
-                </motion.div>
+                  {item.label}
+                </div>
               </Link>
             );
           })}
         </nav>
 
         {/* Bottom section */}
-        <div className="p-4 space-y-1 border-t border-sidebar-border">
+        <div className="p-4 space-y-1 border-t border-border">
           <Link to="/settings" onClick={() => setIsOpen(false)}>
-            <motion.div
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+            <div
+              className={`px-3 py-2 rounded-md text-body transition-colors ${
                 location.pathname === "/settings"
-                  ? "bg-foreground text-background"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  ? "bg-foreground text-background font-medium"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
               }`}
-              whileTap={{ scale: 0.98 }}
             >
-              <Settings className="w-5 h-5" strokeWidth={location.pathname === "/settings" ? 2 : 1.5} />
-              <span className="font-medium text-[15px]">Configurações</span>
-            </motion.div>
+              Configurações
+            </div>
           </Link>
           
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200"
+            className="w-full px-3 py-2 rounded-md text-body text-left text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           >
-            <LogOut className="w-5 h-5" strokeWidth={1.5} />
-            <span className="font-medium text-[15px]">Sair</span>
+            Sair
           </button>
         </div>
-      </motion.aside>
+      </aside>
     </>
   );
 };
