@@ -202,6 +202,47 @@ export type Database = {
           },
         ]
       }
+      merchant_mappings: {
+        Row: {
+          category: string
+          couple_id: string | null
+          created_at: string
+          id: string
+          is_global: boolean | null
+          merchant_normalized: string
+          updated_at: string
+          usage_count: number | null
+        }
+        Insert: {
+          category: string
+          couple_id?: string | null
+          created_at?: string
+          id?: string
+          is_global?: boolean | null
+          merchant_normalized: string
+          updated_at?: string
+          usage_count?: number | null
+        }
+        Update: {
+          category?: string
+          couple_id?: string | null
+          created_at?: string
+          id?: string
+          is_global?: boolean | null
+          merchant_normalized?: string
+          updated_at?: string
+          usage_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "merchant_mappings_couple_id_fkey"
+            columns: ["couple_id"]
+            isOneToOne: false
+            referencedRelation: "couples"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       months: {
         Row: {
           cloned_from: string | null

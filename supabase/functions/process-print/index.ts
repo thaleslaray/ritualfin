@@ -14,10 +14,17 @@ interface ExtractedTransaction {
   amount: number;
 }
 
-// Normalize merchant name for fingerprinting
+interface MerchantMapping {
+  merchant_normalized: string;
+  category: string;
+}
+
+// Normalize merchant name for fingerprinting and matching
 function normalizeMerchant(merchant: string): string {
   return merchant
     .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Remove accents
     .replace(/[^\w\s]/g, "")
     .replace(/\s+/g, " ")
     .trim()
@@ -52,6 +59,33 @@ function getMimeType(filePath: string): string {
   return mimeTypes[ext || ''] || 'image/jpeg';
 }
 
+// Find category for a merchant using mappings (global or couple-specific)
+function findCategoryForMerchant(
+  merchantNormalized: string, 
+  mappings: MerchantMapping[]
+): string | null {
+  // First try exact match
+  const exactMatch = mappings.find(m => m.merchant_normalized === merchantNormalized);
+  if (exactMatch) return exactMatch.category;
+  
+  // Then try partial match (merchant contains mapping or vice versa)
+  for (const mapping of mappings) {
+    if (merchantNormalized.includes(mapping.merchant_normalized) || 
+        mapping.merchant_normalized.includes(merchantNormalized)) {
+      return mapping.category;
+    }
+  }
+  
+  // Try word-based matching (any word from merchant matches a mapping)
+  const merchantWords = merchantNormalized.split(' ').filter(w => w.length > 2);
+  for (const word of merchantWords) {
+    const wordMatch = mappings.find(m => m.merchant_normalized === word);
+    if (wordMatch) return wordMatch.category;
+  }
+  
+  return null;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -82,6 +116,15 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     console.log(`Processing print for import ${importId}`);
+
+    // Fetch merchant mappings (global + couple-specific) for auto-categorization
+    const { data: merchantMappings } = await supabase
+      .from("merchant_mappings")
+      .select("merchant_normalized, category")
+      .or(`is_global.eq.true,couple_id.eq.${coupleId}`);
+    
+    const mappings: MerchantMapping[] = merchantMappings || [];
+    console.log(`Loaded ${mappings.length} merchant mappings for auto-categorization`);
 
     // Fetch the image from Storage
     const { data: fileData, error: fileError } = await supabase.storage
@@ -218,21 +261,39 @@ Regras:
 
     console.log(`${newTransactions.length} new transactions after dedup`);
 
-    // Insert new transactions
+    // Counters for logging
+    let autoCategorizedCount = 0;
+
+    // Insert new transactions with auto-categorization
     if (newTransactions.length > 0) {
-      const transactionsToInsert = newTransactions.map(t => ({
-        month_id: monthId,
-        merchant: t.merchant,
-        merchant_normalized: t.merchantNormalized,
-        amount: t.amount,
-        transaction_date: t.date,
-        source: "print" as const,
-        confidence: "low" as const,
-        needs_review: true,
-        import_id: importId,
-        fingerprint: generateFingerprint(coupleId, t.date, t.amount, t.merchant),
-        raw_data: { extracted_by: "gemini-2.5-flash" },
-      }));
+      const transactionsToInsert = newTransactions.map(t => {
+        // Try to auto-categorize using merchant mappings
+        const autoCategory = findCategoryForMerchant(t.merchantNormalized, mappings);
+        
+        if (autoCategory) {
+          autoCategorizedCount++;
+          console.log(`Auto-categorized "${t.merchant}" → ${autoCategory}`);
+        }
+
+        return {
+          month_id: monthId,
+          merchant: t.merchant,
+          merchant_normalized: t.merchantNormalized,
+          amount: t.amount,
+          transaction_date: t.date,
+          source: "print" as const,
+          // If auto-categorized, set high confidence and no review needed
+          confidence: autoCategory ? "high" as const : "low" as const,
+          needs_review: !autoCategory,
+          category: autoCategory,
+          import_id: importId,
+          fingerprint: generateFingerprint(coupleId, t.date, t.amount, t.merchant),
+          raw_data: { 
+            extracted_by: "gemini-2.5-flash",
+            auto_categorized: !!autoCategory,
+          },
+        };
+      });
 
       const { error: insertError } = await supabase
         .from("transactions")
@@ -243,6 +304,8 @@ Regras:
         throw new Error(`Failed to insert transactions: ${insertError.message}`);
       }
     }
+
+    console.log(`Auto-categorized ${autoCategorizedCount} of ${newTransactions.length} transactions`);
 
     // Update import status
     await supabase
@@ -259,6 +322,7 @@ Regras:
         success: true,
         transactionsFound: extractedTransactions.length,
         transactionsCreated: newTransactions.length,
+        transactionsAutoCategorized: autoCategorizedCount,
         duplicatesSkipped: extractedTransactions.length - newTransactions.length,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }

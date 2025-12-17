@@ -17,11 +17,12 @@ import { BudgetComparisonMini } from "@/components/budget/BudgetComparison";
 import { RitualBadge } from "@/components/brand/Logo";
 import { OnboardingWizard, useOnboarding } from "@/components/onboarding/OnboardingWizard";
 import { SetupChecklist } from "@/components/onboarding/SetupChecklist";
+import { NextStepCard, determineNextStep } from "@/components/onboarding/NextStepCard";
 import { Link } from "react-router-dom";
 import { useCurrentMonth, useCategoryBudgets } from "@/hooks/useMonths";
 import { useTransactionsSummary, usePendingTransactions } from "@/hooks/useTransactions";
 import { useImports } from "@/hooks/useImports";
-import { format } from "date-fns";
+import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 const Index = () => {
@@ -48,6 +49,25 @@ const Index = () => {
     const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     return lastDay.getDate() - now.getDate();
   };
+
+  // Calculate week of month (1-4)
+  const getWeekOfMonth = () => {
+    const now = new Date();
+    return Math.min(Math.ceil(now.getDate() / 7), 4);
+  };
+
+  // Calculate days since last upload
+  const getDaysSinceLastUpload = () => {
+    if (!imports || imports.length === 0) return 999;
+    const lastImport = imports
+      .filter(i => i.status === 'completed')
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+    if (!lastImport) return 999;
+    return differenceInDays(new Date(), new Date(lastImport.created_at));
+  };
+
+  // Check if it's the first day of the month
+  const isFirstDayOfMonth = new Date().getDate() <= 5;
 
   // Calculate totals from category budgets
   const totalPlanned = categoryBudgets?.reduce((sum, cat) => sum + (cat.planned_amount || 0), 0) || 0;
@@ -77,6 +97,19 @@ const Index = () => {
   const hasBudget = totalPlanned > 0;
   const hasUploads = (imports?.length || 0) > 0;
   const hasAllCategorized = pendingCount === 0 && hasUploads;
+
+  // Determine the user's next step
+  const nextStep = determineNextStep({
+    hasMonth: !!currentMonth,
+    monthClosed: !!currentMonth?.closed_at,
+    pendingCount,
+    hasUploads,
+    daysSinceLastUpload: getDaysSinceLastUpload(),
+    isFirstDayOfMonth,
+  });
+
+  // Check if user is still in "first month" (showing checklist)
+  const isFirstMonth = !hasBudget || !hasUploads || !hasAllCategorized;
 
   // Empty state - no month created yet
   if (!currentMonth) {
@@ -145,13 +178,24 @@ const Index = () => {
           </Link>
         </motion.div>
 
-        {/* Setup Checklist for new users */}
-        <SetupChecklist
-          hasMonth={!!currentMonth}
-          hasBudget={hasBudget}
-          hasUploads={hasUploads}
-          hasAllCategorized={hasAllCategorized}
+        {/* Next Step Card - Always visible, contextual guidance */}
+        <NextStepCard
+          stepType={nextStep}
+          pendingCount={pendingCount}
+          daysSinceLastUpload={getDaysSinceLastUpload()}
+          weekProgress={getWeekOfMonth()}
+          isFirstMonth={isFirstMonth}
         />
+
+        {/* Setup Checklist - Only for first month setup */}
+        {isFirstMonth && (
+          <SetupChecklist
+            hasMonth={!!currentMonth}
+            hasBudget={hasBudget}
+            hasUploads={hasUploads}
+            hasAllCategorized={hasAllCategorized}
+          />
+        )}
 
         {/* Main Grid */}
         <div className="grid lg:grid-cols-3 gap-6">
@@ -293,24 +337,26 @@ const Index = () => {
               </Link>
             </motion.div>
 
-            {/* Calendar reminder */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <Card variant="filled" className="border-0">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-3 mb-3">
-                    <Calendar className="w-5 h-5 text-primary" />
-                    <h3 className="font-semibold text-foreground">Próximo ritual</h3>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    <span className="font-medium text-foreground">Quarta-feira</span> - Upload semanal de prints e OFX para manter o relatório atualizado.
-                  </p>
-                </CardContent>
-              </Card>
-            </motion.div>
+            {/* Calendar reminder - only show after first month setup */}
+            {!isFirstMonth && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+              >
+                <Card variant="filled" className="border-0">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-3 mb-3">
+                      <Calendar className="w-5 h-5 text-primary" />
+                      <h3 className="font-semibold text-foreground">Próximo ritual</h3>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      <span className="font-medium text-foreground">Quarta-feira</span> - Upload semanal de prints e OFX para manter o relatório atualizado.
+                    </p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
           </div>
         </div>
       </div>
