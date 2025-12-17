@@ -1,73 +1,174 @@
-# Welcome to your Lovable project
+# RitualFin 💰
 
-## Project info
+**Gerenciamento financeiro para casais, sem drama.**
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+RitualFin é um aplicativo de controle financeiro pessoal baseado em rituais semanais que torna o gerenciamento de orçamento simples e eficiente. Perfeito para casais que desejam ter clareza financeira em apenas 10 minutos por semana.
 
-## How can I edit this code?
+## ✨ O que é RitualFin?
 
-There are several ways of editing your application.
+RitualFin transforma o controle financeiro em um processo simples através de rituais estruturados:
 
-**Use Lovable**
+### 🗓️ **Ritual Dia 1** (Início do Mês)
+Configure seu orçamento mensal em 10 minutos:
+- Cadastre contas fixas (boletos, financiamentos, cartões)
+- Defina quanto gastar em cada categoria (alimentação, transporte, lazer, etc.)
+- Clone o orçamento do mês anterior para economizar tempo
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+### 📤 **Ritual Semanal** (Quartas-feiras)
+Mantenha seus dados atualizados:
+- Envie prints de cartão de crédito ou arquivos OFX
+- O sistema extrai transações automaticamente usando OCR
+- Categorize transações pendentes com sugestões inteligentes
 
-Changes made via Lovable will be committed automatically to this repo.
+### 📊 **Acompanhamento Contínuo**
+- Veja em tempo real: Planejado vs Real
+- Identifique economia ou gastos acima do orçamento
+- Exporte relatórios detalhados em CSV
 
-**Use your preferred IDE**
+## 🎯 Funcionalidades Principais
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 📱 Dashboard Intuitivo
+- Visão geral do mês atual
+- Economia do mês em destaque
+- Próxima ação recomendada
+- Status de transações pendentes
+- Checklist de configuração para novos usuários
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### 💳 Gerenciamento de Orçamento
+- Cadastro de contas recorrentes (boletos, financiamentos)
+- Definição de limites por categoria
+- Controle de cartões de crédito
+- Clonagem de orçamento mensal
+- Fechamento de mês com ritual de confetes! 🎉
 
-Follow these steps:
+### 📥 Upload e Processamento Inteligente
+- Drag & drop de prints de cartão
+- Importação de arquivos OFX
+- Extração automática via OCR
+- Histórico de uploads processados
+
+### 🏷️ Categorização Inteligente
+- Sugestões automáticas de categoria
+- Categorias personalizadas
+- Marcação de transações internas
+- Busca e filtros avançados
+- Sistema de confiança nas sugestões
+
+### 📈 Relatórios Detalhados
+- Comparação por categoria
+- Progresso visual com gráficos
+- Uso de cartões de crédito
+- Exportação para CSV
+- Análise de tendências
+
+### ⚙️ Configurações
+- Gerenciamento de perfil
+- Contas bancárias
+- Categorias personalizadas
+- Tema claro/escuro
+- Logout seguro
+
+## 🚀 Como Começar
+
+### Pré-requisitos
+- Node.js 16+ instalado
+- Conta no Supabase (para backend)
+
+### Instalação Local
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# Clone o repositório
+git clone <URL_DO_SEU_REPOSITORIO>
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Entre no diretório
+cd ritualfin
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Instale as dependências
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Configure as variáveis de ambiente
+# Crie um arquivo .env na raiz do projeto com:
+# VITE_SUPABASE_URL=sua_url_do_supabase
+# VITE_SUPABASE_PUBLISHABLE_KEY=sua_chave_publica_do_supabase
+# VITE_SUPABASE_PROJECT_ID=seu_project_id
+
+# Inicie o servidor de desenvolvimento
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+O aplicativo estará disponível em `http://localhost:5173`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Comandos Disponíveis
 
-**Use GitHub Codespaces**
+```sh
+npm run dev        # Inicia servidor de desenvolvimento
+npm run build      # Compila para produção
+npm run preview    # Preview da build de produção
+npm run lint       # Executa o linter
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 🛠️ Tecnologias
 
-## What technologies are used for this project?
+- **Frontend Framework**: React 18 + TypeScript
+- **Build Tool**: Vite
+- **UI Components**: shadcn/ui + Radix UI
+- **Styling**: Tailwind CSS
+- **Animations**: Framer Motion
+- **Backend**: Supabase (Auth + Database + Storage)
+- **Forms**: React Hook Form + Zod
+- **State Management**: TanStack Query
+- **Routing**: React Router DOM
+- **Charts**: Recharts
+- **Date Handling**: date-fns
+- **Icons**: Lucide React
 
-This project is built with:
+## 📂 Estrutura do Projeto
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+```
+ritualfin/
+├── src/
+│   ├── components/      # Componentes reutilizáveis
+│   │   ├── brand/       # Logo e identidade visual
+│   │   ├── budget/      # Componentes de orçamento
+│   │   ├── layout/      # Layout da aplicação
+│   │   ├── onboarding/  # Wizard de boas-vindas
+│   │   ├── transactions/# Componentes de transações
+│   │   └── ui/          # Componentes UI do shadcn
+│   ├── contexts/        # Contextos React (Auth)
+│   ├── hooks/           # Custom hooks
+│   ├── integrations/    # Integração com Supabase
+│   ├── pages/           # Páginas da aplicação
+│   ├── utils/           # Funções utilitárias
+│   └── lib/             # Configurações de libs
+├── public/              # Arquivos estáticos
+└── supabase/            # Migrações e funções do banco
+```
 
-## How can I deploy this project?
+## 🎨 Principais Páginas
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+- **`/`** - Dashboard principal com visão geral
+- **`/budget`** - Ritual Dia 1: configuração de orçamento
+- **`/uploads`** - Upload de prints e arquivos OFX
+- **`/transactions`** - Categorização e gerenciamento de transações
+- **`/report`** - Relatórios e análises detalhadas
+- **`/settings`** - Configurações da conta
+- **`/auth`** - Autenticação e login
 
-## Can I connect a custom domain to my Lovable project?
+## 🔐 Segurança
 
-Yes, you can!
+- Autenticação via Supabase
+- Row Level Security (RLS) no banco de dados
+- Proteção de rotas com `ProtectedRoute`
+- Dados compartilhados apenas entre casais autorizados
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## 📝 Licença
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Este projeto é de uso pessoal.
+
+## 👥 Autores
+
+Desenvolvido por Thales Laray
+
+---
+
+**RitualFin** - Clareza financeira em 10 minutos por semana ⏰💰
