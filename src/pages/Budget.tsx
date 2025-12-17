@@ -9,6 +9,7 @@ import {
   Plus,
   Trash2,
   Lock,
+  LockOpen,
   Loader2
 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -42,9 +43,12 @@ import {
 import { format, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { EditableBillRow } from "@/components/budget/EditableBillRow";
+import { CategoryBudgetInput } from "@/components/budget/CategoryBudgetInput";
+import { EditableCardRow } from "@/components/budget/EditableCardRow";
 
 const Budget = () => {
   const [step, setStep] = useState(1);
+  const [isEditingLocked, setIsEditingLocked] = useState(false); // Permite editar mesmo após fechar
   const [newBillName, setNewBillName] = useState("");
   const [newBillAmount, setNewBillAmount] = useState("");
   const [newBillDueDay, setNewBillDueDay] = useState("");
@@ -90,6 +94,11 @@ const Budget = () => {
     }
   }, [currentMonth, categoryBudgets]);
 
+  // Reset editing state when month changes
+  useEffect(() => {
+    setIsEditingLocked(false);
+  }, [currentMonth?.id]);
+
   const totalPlanned = categoryBudgets?.reduce((sum, cat) => sum + (cat.planned_amount || 0), 0) || 0;
   const currentYearMonth = new Date().toISOString().slice(0, 7);
 
@@ -132,13 +141,26 @@ const Budget = () => {
   };
 
   const handleUnlock = () => {
-    toast.info("Edições após fechamento serão marcadas", {
-      description: "As alterações ficam visíveis no relatório.",
+    setIsEditingLocked(true);
+    toast.info("Modo de edição ativado", {
+      description: "Edições após fechamento serão marcadas no relatório.",
     });
+  };
+
+  const handleLockEditing = () => {
+    setIsEditingLocked(false);
+    toast.success("Edições salvas");
   };
 
   const handleUpdateCategoryBudget = (budgetId: string, amount: number) => {
     updateCategoryBudget.mutate({ id: budgetId, planned_amount: amount });
+  };
+
+  const handleStepClick = (targetStep: number) => {
+    // Só permite navegar para steps já completados ou o próximo
+    if (currentMonth && (targetStep <= step || targetStep === step + 1)) {
+      setStep(targetStep);
+    }
   };
 
   const handleAddBill = () => {
@@ -197,10 +219,17 @@ const Budget = () => {
             </h1>
             {currentMonth && (
               isLocked ? (
-                <Button variant="outline" size="sm" onClick={handleUnlock} className="gap-2">
-                  <Lock className="w-4 h-4" />
-                  Mês Fechado
-                </Button>
+                isEditingLocked ? (
+                  <Button variant="outline" size="sm" onClick={handleLockEditing} className="gap-2">
+                    <Check className="w-4 h-4" />
+                    Salvar Edições
+                  </Button>
+                ) : (
+                  <Button variant="outline" size="sm" onClick={handleUnlock} className="gap-2">
+                    <LockOpen className="w-4 h-4" />
+                    Editar Mês Fechado
+                  </Button>
+                )
               ) : (
                 <Button 
                   variant="hero" 
@@ -231,22 +260,27 @@ const Budget = () => {
           transition={{ delay: 0.1 }}
         >
           <div className="flex items-center gap-2 mb-6">
-            {[1, 2, 3].map((s) => (
-              <div key={s} className="flex items-center gap-2">
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
-                    step >= s
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground"
-                  }`}
-                >
-                  {step > s ? <Check className="w-4 h-4" /> : s}
+            {[1, 2, 3].map((s) => {
+              const isClickable = currentMonth && (s <= step || s === step + 1);
+              return (
+                <div key={s} className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleStepClick(s)}
+                    disabled={!isClickable}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
+                      step >= s
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground"
+                    } ${isClickable ? "cursor-pointer hover:ring-2 hover:ring-primary/50" : "cursor-default"}`}
+                  >
+                    {step > s ? <Check className="w-4 h-4" /> : s}
+                  </button>
+                  {s < 3 && (
+                    <div className={`w-12 h-1 rounded-full ${step > s ? "bg-primary" : "bg-muted"}`} />
+                  )}
                 </div>
-                {s < 3 && (
-                  <div className={`w-12 h-1 rounded-full ${step > s ? "bg-primary" : "bg-muted"}`} />
-                )}
-              </div>
-            ))}
+              );
+            })}
             <span className="ml-2 text-sm text-muted-foreground">
               {step === 1 && "Clonar mês anterior"}
               {step === 2 && "Ajustar valores"}
@@ -321,6 +355,7 @@ const Budget = () => {
                       bill={bill}
                       index={index}
                       isLocked={isLocked}
+                      isEditingLocked={isEditingLocked}
                       onUpdate={(id, updates) => updateRecurringBill.mutate({ id, ...updates })}
                       onDelete={(id) => deleteRecurringBill.mutate(id)}
                       isUpdating={updateRecurringBill.isPending}
@@ -328,7 +363,7 @@ const Budget = () => {
                   ))}
                   
                   {/* Add new bill form */}
-                  {!isLocked && (
+                  {(!isLocked || isEditingLocked) && (
                     <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/30 border-2 border-dashed border-muted">
                       <Input
                         placeholder="Ex: Financiamento, Colégio, Aluguel"
@@ -395,28 +430,17 @@ const Budget = () => {
                       if (!info) return null;
                       
                       return (
-                        <motion.div
+                        <CategoryBudgetInput
                           key={cat.id}
-                          className="flex items-center gap-3 p-3 rounded-xl bg-muted/50"
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: index * 0.04 }}
-                        >
-                          <div className={`w-10 h-10 rounded-xl ${info.color} flex items-center justify-center shrink-0`}>
-                            <info.icon className="w-5 h-5 text-white" />
-                          </div>
-                          <span className="flex-1 font-medium text-foreground">{info.label}</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-muted-foreground">R$</span>
-                            <Input
-                              type="number"
-                              value={cat.planned_amount}
-                              className="w-24 bg-card border-border"
-                              disabled={isLocked}
-                              onChange={(e) => handleUpdateCategoryBudget(cat.id, parseFloat(e.target.value) || 0)}
-                            />
-                          </div>
-                        </motion.div>
+                          budgetId={cat.id}
+                          category={cat.category}
+                          plannedAmount={cat.planned_amount}
+                          isLocked={isLocked}
+                          isEditingLocked={isEditingLocked}
+                          index={index}
+                          categoryInfo={info}
+                          onUpdate={handleUpdateCategoryBudget}
+                        />
                       );
                     })}
                   </div>
@@ -442,45 +466,20 @@ const Budget = () => {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {cards?.map((card, index) => (
-                    <motion.div
+                    <EditableCardRow
                       key={card.id}
-                      className="flex items-center gap-3 p-3 rounded-xl bg-muted/50"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                    >
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center">
-                        <CreditCard className="w-5 h-5 text-primary-foreground" />
-                      </div>
-                      <Input
-                        value={card.name}
-                        className="flex-1 bg-transparent border-0 font-medium"
-                        disabled={isLocked}
-                        onChange={(e) => updateCard.mutate({ id: card.id, name: e.target.value })}
-                      />
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">Teto: R$</span>
-                        <Input
-                          type="number"
-                          value={card.monthly_limit}
-                          className="w-24 bg-card border-border"
-                          disabled={isLocked}
-                          onChange={(e) => updateCard.mutate({ id: card.id, monthly_limit: parseFloat(e.target.value) || 0 })}
-                        />
-                      </div>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        disabled={isLocked}
-                        onClick={() => deleteCard.mutate(card.id)}
-                      >
-                        <Trash2 className="w-4 h-4 text-muted-foreground" />
-                      </Button>
-                    </motion.div>
+                      card={card}
+                      index={index}
+                      isLocked={isLocked}
+                      isEditingLocked={isEditingLocked}
+                      onUpdate={(id, updates) => updateCard.mutate({ id, ...updates })}
+                      onDelete={(id) => deleteCard.mutate(id)}
+                      isUpdating={updateCard.isPending}
+                    />
                   ))}
                   
                   {/* Add new card form */}
-                  {!isLocked && (
+                  {(!isLocked || isEditingLocked) && (
                     <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/30 border-2 border-dashed border-muted">
                       <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
                         <CreditCard className="w-5 h-5 text-muted-foreground" />
