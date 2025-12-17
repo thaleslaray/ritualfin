@@ -244,7 +244,6 @@ const Budget = () => {
               )
             ) : (
               <Button 
-                variant="hero" 
                 onClick={handleLock} 
                 className="gap-2"
                 disabled={closeMonth.isPending}
@@ -302,7 +301,7 @@ const Budget = () => {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2 }}
           >
-            <Card variant="filled" className="text-center py-16">
+            <Card className="text-center py-16 bg-muted">
               <CardContent>
                 <div className="w-20 h-20 rounded-3xl bg-foreground flex items-center justify-center mx-auto mb-8">
                   <Copy className="w-10 h-10 text-background" />
@@ -317,9 +316,8 @@ const Budget = () => {
                   }
                 </p>
                 <Button 
-                  variant="hero" 
                   size="lg" 
-                  onClick={handleClone} 
+                  onClick={handleClone}
                   className="gap-2"
                   disabled={cloneMonth.isPending || createMonth.isPending}
                 >

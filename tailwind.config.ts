@@ -2,28 +2,37 @@ import type { Config } from "tailwindcss";
 
 export default {
   darkMode: ["class"],
-  content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
+  content: [
+    "./pages/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./app/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx}",
+  ],
   prefix: "",
   theme: {
     container: {
       center: true,
-      padding: "2rem",
+      padding: "1.5rem",
       screens: {
         "2xl": "1200px",
       },
     },
     extend: {
       fontFamily: {
-        sans: ["-apple-system", "BlinkMacSystemFont", "SF Pro Display", "SF Pro Text", "Helvetica Neue", "Arial", "sans-serif"],
+        sans: [
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "SF Pro Text",
+          "Helvetica Neue",
+          "Arial",
+          "sans-serif",
+        ],
       },
+      /* Dieter Rams: Only 3 font sizes */
       fontSize: {
-        'hero': ['4.5rem', { lineHeight: '1', letterSpacing: '-0.04em', fontWeight: '600' }],
-        'display': ['3.5rem', { lineHeight: '1.1', letterSpacing: '-0.03em', fontWeight: '600' }],
-        'headline': ['2rem', { lineHeight: '1.2', letterSpacing: '-0.02em', fontWeight: '600' }],
-        'title': ['1.375rem', { lineHeight: '1.3', letterSpacing: '-0.02em', fontWeight: '600' }],
-        'body': ['1.0625rem', { lineHeight: '1.5', letterSpacing: '-0.01em' }],
-        'caption': ['0.9375rem', { lineHeight: '1.4', letterSpacing: '-0.01em' }],
-        'footnote': ['0.8125rem', { lineHeight: '1.4', letterSpacing: '0' }],
+        headline: ["1.5rem", { lineHeight: "1.3", fontWeight: "600" }],
+        body: ["1rem", { lineHeight: "1.5", fontWeight: "400" }],
+        caption: ["0.875rem", { lineHeight: "1.4", fontWeight: "400" }],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -34,8 +43,6 @@ export default {
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
-          light: "hsl(var(--primary-light))",
-          glow: "hsl(var(--primary-glow))",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
@@ -44,14 +51,6 @@ export default {
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
-        },
-        success: {
-          DEFAULT: "hsl(var(--success))",
-          foreground: "hsl(var(--success-foreground))",
-        },
-        warning: {
-          DEFAULT: "hsl(var(--warning))",
-          foreground: "hsl(var(--warning-foreground))",
         },
         muted: {
           DEFAULT: "hsl(var(--muted))",
@@ -80,26 +79,22 @@ export default {
           ring: "hsl(var(--sidebar-ring))",
         },
       },
+      /* Consistent 8px border radius */
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 4px)",
-        sm: "calc(var(--radius) - 8px)",
-        xl: "1.25rem",
-        "2xl": "1.5rem",
-        "3xl": "2rem",
-        "4xl": "2.5rem",
+        lg: "0.5rem",
+        md: "0.5rem",
+        sm: "0.5rem",
       },
+      /* Single subtle shadow */
       boxShadow: {
-        sm: "var(--shadow-sm)",
-        md: "var(--shadow-md)",
-        lg: "var(--shadow-lg)",
-        xl: "var(--shadow-xl)",
-        glow: "var(--shadow-glow)",
-        card: "var(--shadow-card)",
+        DEFAULT: "var(--shadow)",
       },
-      spacing: {
-        '18': '4.5rem',
-        '22': '5.5rem',
+      /* Minimal transition */
+      transitionDuration: {
+        DEFAULT: "150ms",
+      },
+      transitionTimingFunction: {
+        DEFAULT: "ease-out",
       },
       keyframes: {
         "accordion-down": {
@@ -110,48 +105,10 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
-        "slide-up": {
-          from: { opacity: "0", transform: "translateY(30px)" },
-          to: { opacity: "1", transform: "translateY(0)" },
-        },
-        "fade-in": {
-          from: { opacity: "0" },
-          to: { opacity: "1" },
-        },
-        "scale-in": {
-          from: { opacity: "0", transform: "scale(0.96)" },
-          to: { opacity: "1", transform: "scale(1)" },
-        },
-        shimmer: {
-          "0%": { backgroundPosition: "-200% 0" },
-          "100%": { backgroundPosition: "200% 0" },
-        },
-        float: {
-          "0%, 100%": { transform: "translateY(0px)" },
-          "50%": { transform: "translateY(-8px)" },
-        },
-        pulse: {
-          "0%, 100%": { opacity: "1" },
-          "50%": { opacity: "0.5" },
-        },
       },
       animation: {
-        "accordion-down": "accordion-down 0.3s cubic-bezier(0.32, 0.72, 0, 1)",
-        "accordion-up": "accordion-up 0.3s cubic-bezier(0.32, 0.72, 0, 1)",
-        "slide-up": "slide-up 0.6s cubic-bezier(0.32, 0.72, 0, 1)",
-        "fade-in": "fade-in 0.5s cubic-bezier(0.32, 0.72, 0, 1)",
-        "scale-in": "scale-in 0.4s cubic-bezier(0.32, 0.72, 0, 1)",
-        shimmer: "shimmer 2s linear infinite",
-        float: "float 3s ease-in-out infinite",
-        pulse: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-      },
-      transitionTimingFunction: {
-        'apple': 'cubic-bezier(0.32, 0.72, 0, 1)',
-      },
-      transitionDuration: {
-        '400': '400ms',
-        '600': '600ms',
-        '800': '800ms',
+        "accordion-down": "accordion-down 0.15s ease-out",
+        "accordion-up": "accordion-up 0.15s ease-out",
       },
     },
   },
