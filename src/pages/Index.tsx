@@ -134,6 +134,36 @@ const Index = () => {
   return (
     <AppLayout>
       <div className="space-y-10">
+        {/* Test Banner */}
+        <motion.div
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="w-full rounded-3xl bg-gradient-to-r from-primary via-primary/80 to-primary/60 p-8 sm:p-12 text-primary-foreground"
+        >
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div className="text-center sm:text-left">
+              <p className="text-sm font-medium uppercase tracking-wider opacity-80 mb-2">
+                🚧 Modo de Testes
+              </p>
+              <h2 className="text-3xl sm:text-4xl font-bold mb-2">
+                Banner Gigante de Testes
+              </h2>
+              <p className="text-lg opacity-90 max-w-xl">
+                Este é um banner temporário para fins de teste. 
+                Pode ser removido a qualquer momento.
+              </p>
+            </div>
+            <Button 
+              variant="secondary" 
+              size="lg" 
+              className="shrink-0 bg-background text-foreground hover:bg-background/90"
+            >
+              Ação de Teste
+            </Button>
+          </div>
+        </motion.div>
+
         {/* Header */}
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
