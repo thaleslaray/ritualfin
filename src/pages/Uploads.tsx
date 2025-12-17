@@ -20,12 +20,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useQueryClient } from "@tanstack/react-query";
 
 const Uploads = () => {
   const [isDraggingPrint, setIsDraggingPrint] = useState(false);
   const [isDraggingOfx, setIsDraggingOfx] = useState(false);
   
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { data: currentMonth, isLoading: monthLoading } = useCurrentMonth();
   const { data: imports, isLoading: importsLoading } = useImports();
   const createImport = useCreateImport();
@@ -97,6 +99,9 @@ const Uploads = () => {
           });
           toast.error(`Erro ao processar ${file.name}`, { description: error.message });
         } else if (data?.success) {
+          // Fallback: invalidate query in case realtime doesn't trigger
+          queryClient.invalidateQueries({ queryKey: ["imports"] });
+          
           toast.success(`${file.name} processado!`, {
             description: `${data.transactionsCreated} novas transações encontradas`,
           });
@@ -120,7 +125,7 @@ const Uploads = () => {
         });
       }
     }
-  }, [currentMonth, user, createImport, uploadFile, updateStatus]);
+  }, [currentMonth, user, createImport, uploadFile, updateStatus, queryClient]);
 
   const handleDropPrint = useCallback((e: React.DragEvent) => {
     e.preventDefault();
