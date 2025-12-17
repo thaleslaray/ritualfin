@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { getCategoryInfo } from "@/components/transactions/CategoryPopup";
+import { AlertTriangle } from "lucide-react";
 
 interface BudgetCategory {
   id: string;
@@ -12,73 +13,54 @@ interface BudgetComparisonProps {
   showLabels?: boolean;
 }
 
-export const BudgetComparison = ({ categories, showLabels = true }: BudgetComparisonProps) => {
-  const maxValue = Math.max(...categories.flatMap(c => [c.planned, c.actual]));
-
+export const BudgetComparison = ({ categories }: BudgetComparisonProps) => {
   return (
-    <div className="space-y-4">
+    <div className="divide-y divide-border">
       {categories.map((category, index) => {
         const info = getCategoryInfo(category.id);
-        const plannedWidth = (category.planned / maxValue) * 100;
-        const actualWidth = (category.actual / maxValue) * 100;
-        const isOverBudget = category.actual > category.planned;
         const percentage = category.planned > 0 
           ? Math.round((category.actual / category.planned) * 100) 
           : 0;
+        const isOverBudget = category.actual > category.planned;
+        const progressWidth = Math.min(percentage, 100);
 
         return (
           <motion.div
             key={category.id}
-            className="space-y-2"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.08 }}
+            className="py-5 first:pt-0 last:pb-0"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05 }}
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className={`w-6 h-6 rounded-lg ${info.color} flex items-center justify-center`}>
-                  <info.icon className="w-3.5 h-3.5 text-white" />
-                </div>
-                <span className="font-medium text-sm text-foreground">{info.label}</span>
+            {/* Category name */}
+            <p className="text-body text-foreground font-medium mb-3">
+              {info.label}
+            </p>
+
+            {/* Progress bar */}
+            <div className="flex items-center gap-4">
+              <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                <motion.div
+                  className={`h-full rounded-full ${isOverBudget ? "bg-destructive" : "bg-foreground"}`}
+                  initial={{ width: 0 }}
+                  animate={{ width: `${progressWidth}%` }}
+                  transition={{ duration: 0.6, delay: index * 0.05 }}
+                />
               </div>
-              {showLabels && (
-                <div className="flex items-center gap-2">
-                  <span className={`text-sm font-semibold ${isOverBudget ? "text-destructive" : "text-foreground"}`}>
-                    {percentage}%
-                  </span>
-                </div>
-              )}
-            </div>
-
-            <div className="relative h-8 bg-muted rounded-lg overflow-hidden">
-              {/* Planned bar (background) */}
-              <motion.div
-                className="absolute inset-y-0 left-0 bg-muted-foreground/20 rounded-lg"
-                initial={{ width: 0 }}
-                animate={{ width: `${plannedWidth}%` }}
-                transition={{ duration: 0.6, delay: index * 0.08 }}
-              />
-              
-              {/* Actual bar (foreground) */}
-              <motion.div
-                className={`absolute inset-y-0 left-0 rounded-lg ${
-                  isOverBudget ? "bg-destructive" : info.color
-                }`}
-                initial={{ width: 0 }}
-                animate={{ width: `${actualWidth}%` }}
-                transition={{ duration: 0.8, delay: index * 0.08 + 0.2 }}
-              />
-
-              {/* Values */}
-              <div className="absolute inset-0 flex items-center justify-between px-3">
-                <span className="text-xs font-medium text-white drop-shadow-md">
-                  R$ {category.actual.toFixed(0)}
+              <div className="flex items-center gap-2 min-w-[60px] justify-end">
+                <span className={`text-caption font-medium ${isOverBudget ? "text-destructive" : "text-muted-foreground"}`}>
+                  {percentage}%
                 </span>
-                <span className="text-xs text-muted-foreground">
-                  / R$ {category.planned.toFixed(0)}
-                </span>
+                {isOverBudget && (
+                  <AlertTriangle className="w-3.5 h-3.5 text-destructive" />
+                )}
               </div>
             </div>
+
+            {/* Values */}
+            <p className="text-caption text-muted-foreground mt-2">
+              R$ {category.actual.toLocaleString('pt-BR')} de R$ {category.planned.toLocaleString('pt-BR')}
+            </p>
           </motion.div>
         );
       })}
@@ -89,7 +71,7 @@ export const BudgetComparison = ({ categories, showLabels = true }: BudgetCompar
 // Mini version for dashboard
 export const BudgetComparisonMini = ({ categories }: { categories: BudgetCategory[] }) => {
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {categories.slice(0, 4).map((category, index) => {
         const info = getCategoryInfo(category.id);
         const percentage = category.planned > 0 
@@ -100,29 +82,23 @@ export const BudgetComparisonMini = ({ categories }: { categories: BudgetCategor
         return (
           <motion.div
             key={category.id}
-            className="flex items-center gap-3"
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.1 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05 }}
           >
-            <div className={`w-8 h-8 rounded-lg ${info.color} flex items-center justify-center shrink-0`}>
-              <info.icon className="w-4 h-4 text-white" />
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-caption text-foreground font-medium">{info.label}</span>
+              <span className={`text-footnote font-medium ${isOverBudget ? "text-destructive" : "text-muted-foreground"}`}>
+                {category.planned > 0 ? Math.round((category.actual / category.planned) * 100) : 0}%
+              </span>
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-medium text-foreground truncate">{info.label}</span>
-              <span className={`text-xs font-semibold ${isOverBudget ? "text-destructive" : "text-muted-foreground"}`}>
-                  {category.planned > 0 ? Math.round((category.actual / category.planned) * 100) : 0}%
-                </span>
-              </div>
-              <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                <motion.div
-                  className={`h-full rounded-full ${isOverBudget ? "bg-destructive" : info.color}`}
-                  initial={{ width: 0 }}
-                  animate={{ width: `${percentage}%` }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
-                />
-              </div>
+            <div className="h-1 bg-muted rounded-full overflow-hidden">
+              <motion.div
+                className={`h-full rounded-full ${isOverBudget ? "bg-destructive" : "bg-foreground"}`}
+                initial={{ width: 0 }}
+                animate={{ width: `${percentage}%` }}
+                transition={{ duration: 0.5, delay: index * 0.05 }}
+              />
             </div>
           </motion.div>
         );
