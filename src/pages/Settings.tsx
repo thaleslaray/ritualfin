@@ -12,43 +12,59 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
-const settingsGroups = [
-  {
-    title: "Conta",
-    items: [
-      { icon: User, label: "Perfil", description: "Editar informações pessoais" },
-      { icon: Users, label: "Casal", description: "Gerenciar parceiro vinculado" },
-    ],
-  },
-  {
-    title: "Financeiro",
-    items: [
-      { icon: CreditCard, label: "Cartões", description: "Gerenciar cartões e limites" },
-      { icon: Tag, label: "Categorias", description: "Personalizar categorias" },
-    ],
-  },
-  {
-    title: "Preferências",
-    items: [
-      { icon: Bell, label: "Notificações", description: "Configurar lembretes" },
-      { icon: Shield, label: "Privacidade", description: "Segurança e LGPD" },
-    ],
-  },
-  {
-    title: "Suporte",
-    items: [
-      { icon: HelpCircle, label: "Ajuda", description: "FAQ e tutoriais" },
-    ],
-  },
-];
+import { toast } from "sonner";
+
+type SettingsItem = {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  description: string;
+  action?: () => void;
+};
+
+type SettingsGroup = {
+  title: string;
+  items: SettingsItem[];
+};
 
 const Settings = () => {
   const { profile, user, signOut } = useAuth();
   const navigate = useNavigate();
+
+  const comingSoon = () => toast.info("Em breve!");
+
+  const settingsGroups: SettingsGroup[] = [
+    {
+      title: "Conta",
+      items: [
+        { icon: User, label: "Perfil", description: "Editar informações pessoais", action: comingSoon },
+        { icon: Users, label: "Casal", description: "Gerenciar parceiro vinculado", action: comingSoon },
+      ],
+    },
+    {
+      title: "Financeiro",
+      items: [
+        { icon: CreditCard, label: "Cartões", description: "Gerenciar cartões e limites", action: comingSoon },
+        { icon: Tag, label: "Categorias", description: "Personalizar categorias", action: comingSoon },
+      ],
+    },
+    {
+      title: "Preferências",
+      items: [
+        { icon: Bell, label: "Notificações", description: "Configurar lembretes", action: comingSoon },
+        { icon: Shield, label: "Privacidade", description: "Segurança e LGPD", action: comingSoon },
+      ],
+    },
+    {
+      title: "Suporte",
+      items: [
+        { icon: HelpCircle, label: "Ajuda", description: "FAQ e tutoriais", action: comingSoon },
+      ],
+    },
+  ];
 
   const handleLogout = async () => {
     await signOut();
@@ -134,6 +150,7 @@ const Settings = () => {
                 {group.items.map((item, itemIndex) => (
                   <button
                     key={item.label}
+                    onClick={item.action}
                     className={`w-full flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors ${
                       itemIndex !== group.items.length - 1 ? "border-b border-border" : ""
                     }`}
