@@ -68,8 +68,8 @@ export const TransactionList = ({ transactions, onTransactionClick }: Transactio
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 {categoryInfo ? (
-                  <div className={`w-10 h-10 rounded-xl ${categoryInfo.color} flex items-center justify-center`}>
-                    <categoryInfo.icon className="w-5 h-5 text-white" />
+                  <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
+                    <categoryInfo.icon className="w-5 h-5 text-foreground" />
                   </div>
                 ) : (
                   <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">

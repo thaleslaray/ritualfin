@@ -14,14 +14,14 @@ import {
 import { Button } from "@/components/ui/button";
 
 const categories = [
-  { id: "Moradia", label: "Moradia", icon: Home, color: "bg-blue-500" },
-  { id: "Alimentação", label: "Alimentação", icon: Utensils, color: "bg-orange-500" },
-  { id: "Transporte", label: "Transporte", icon: Car, color: "bg-green-500" },
-  { id: "Saúde", label: "Saúde", icon: Heart, color: "bg-red-500" },
-  { id: "Vestuário", label: "Vestuário", icon: ShoppingBag, color: "bg-purple-500" },
-  { id: "Lazer", label: "Lazer", icon: Plane, color: "bg-cyan-500" },
-  { id: "Educação", label: "Educação", icon: Smartphone, color: "bg-indigo-500" },
-  { id: "Outros", label: "Outros", icon: MoreHorizontal, color: "bg-gray-500" },
+  { id: "Moradia", label: "Moradia", icon: Home },
+  { id: "Alimentação", label: "Alimentação", icon: Utensils },
+  { id: "Transporte", label: "Transporte", icon: Car },
+  { id: "Saúde", label: "Saúde", icon: Heart },
+  { id: "Vestuário", label: "Vestuário", icon: ShoppingBag },
+  { id: "Lazer", label: "Lazer", icon: Plane },
+  { id: "Educação", label: "Educação", icon: Smartphone },
+  { id: "Outros", label: "Outros", icon: MoreHorizontal },
 ];
 
 interface CategoryPopupProps {

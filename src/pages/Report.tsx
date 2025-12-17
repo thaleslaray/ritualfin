@@ -188,29 +188,19 @@ const Report = () => {
           </motion.div>
         </div>
 
-        {/* Alerts */}
+        {/* Alerts - Apple style: simple text */}
         {overBudgetCategories.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
+            className="text-caption text-destructive"
           >
-            <Card variant="filled" className="border border-warning/30">
-              <CardContent className="p-5">
-                <div className="flex items-center gap-4">
-                  <AlertTriangle className="w-6 h-6 text-warning shrink-0" />
-                  <div>
-                    <p className="text-body text-foreground font-medium">
-                      Categorias acima do orçamento
-                    </p>
-                    <p className="text-caption text-muted-foreground">
-                      {overBudgetCategories.map(id => getCategoryInfo(id)?.label).join(", ")}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+            {overBudgetCategories.length === 1 
+              ? `${getCategoryInfo(overBudgetCategories[0])?.label} está acima do orçamento`
+              : `${overBudgetCategories.length} categorias acima do orçamento`
+            }
+          </motion.p>
         )}
 
         {/* Budget Comparison */}
@@ -240,12 +230,7 @@ const Report = () => {
           >
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <CreditCard className="w-5 h-5 text-primary" />
-                  </div>
-                  Teto dos Cartões
-                </CardTitle>
+                <CardTitle>Teto dos Cartões</CardTitle>
               </CardHeader>
               <CardContent className="space-y-5">
                 {cardUsage.map((card, index) => (
@@ -314,31 +299,22 @@ const Report = () => {
                       transition={{ delay: 0.45 + index * 0.03 }}
                     >
                       <button
-                        className={`w-full p-4 rounded-2xl text-left transition-all duration-200 ${
-                          isExpanded ? "bg-muted" : "bg-muted/30 hover:bg-muted/50"
-                        }`}
+                        className="w-full py-4 text-left transition-all duration-200 hover:opacity-70"
                         onClick={() => setExpandedCategory(isExpanded ? null : category.id)}
                       >
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                            <div className="w-11 h-11 rounded-xl bg-foreground/10 flex items-center justify-center">
-                              <info.icon className="w-5 h-5 text-foreground" />
-                            </div>
-                            <div>
-                              <p className="text-body text-foreground font-medium">{info.label}</p>
-                              <p className="text-caption text-muted-foreground">
-                                R$ {category.actual.toLocaleString('pt-BR')} / R$ {category.planned.toLocaleString('pt-BR')}
-                              </p>
-                            </div>
+                          <div>
+                            <p className="text-body text-foreground font-medium">{info.label}</p>
+                            <p className="text-caption text-muted-foreground">
+                              R$ {category.actual.toLocaleString('pt-BR')} de R$ {category.planned.toLocaleString('pt-BR')}
+                            </p>
                           </div>
                           <div className="flex items-center gap-3">
-                            <span className={`text-caption font-semibold ${isOverBudget ? "text-destructive" : "text-success"}`}>
+                            <span className={`text-caption font-medium ${isOverBudget ? "text-destructive" : "text-muted-foreground"}`}>
                               {percentage}%
                             </span>
-                            {isOverBudget ? (
-                              <AlertTriangle className="w-5 h-5 text-destructive" />
-                            ) : (
-                              <CheckCircle2 className="w-5 h-5 text-success" />
+                            {isOverBudget && (
+                              <AlertTriangle className="w-4 h-4 text-destructive" />
                             )}
                             <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${isExpanded ? "rotate-180" : ""}`} />
                           </div>
