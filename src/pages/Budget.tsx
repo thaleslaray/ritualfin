@@ -306,10 +306,10 @@ const Budget = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Calendar className="w-5 h-5 text-primary" />
-                    Contas Recorrentes
+                    Contas Fixas
                   </CardTitle>
                   <CardDescription>
-                    Contas fixas com data de vencimento
+                    Boletos, financiamentos, mensalidades e outras contas com vencimento mensal
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -362,7 +362,7 @@ const Budget = () => {
                   {!isLocked && (
                     <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/30 border-2 border-dashed border-muted">
                       <Input
-                        placeholder="Nome da conta"
+                        placeholder="Ex: Financiamento, Colégio, Aluguel"
                         value={newBillName}
                         className="flex-1 bg-transparent"
                         onChange={(e) => setNewBillName(e.target.value)}
