@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -92,9 +93,9 @@ serve(async (req) => {
       throw new Error(`Failed to download file: ${fileError.message}`);
     }
 
-    // Convert to base64
+    // Convert to base64 (using Deno std to handle large files without stack overflow)
     const arrayBuffer = await fileData.arrayBuffer();
-    const base64Image = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+    const base64Image = base64Encode(arrayBuffer);
     const mimeType = getMimeType(fileUrl);
 
     console.log("Calling Gemini for OCR extraction...");
