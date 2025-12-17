@@ -32,10 +32,18 @@ export const BudgetComparison = ({ categories }: BudgetComparisonProps) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
           >
-            {/* Category name */}
-            <p className="text-body text-foreground font-medium mb-3">
-              {info.label}
-            </p>
+            {/* Category name with colored icon */}
+            <div className="flex items-center gap-3 mb-3">
+              <div 
+                className="w-8 h-8 rounded-full flex items-center justify-center"
+                style={{ backgroundColor: info.color }}
+              >
+                <info.icon className="w-4 h-4 text-white" />
+              </div>
+              <p className="text-body text-foreground font-medium">
+                {info.label}
+              </p>
+            </div>
 
             {/* Progress bar */}
             <div className="flex items-center gap-4">
@@ -87,7 +95,15 @@ export const BudgetComparisonMini = ({ categories }: { categories: BudgetCategor
             transition={{ delay: index * 0.05 }}
           >
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-caption text-foreground font-medium">{info.label}</span>
+              <div className="flex items-center gap-2">
+                <div 
+                  className="w-5 h-5 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: info.color }}
+                >
+                  <info.icon className="w-3 h-3 text-white" />
+                </div>
+                <span className="text-caption text-foreground font-medium">{info.label}</span>
+              </div>
               <span className={`text-footnote font-medium ${isOverBudget ? "text-destructive" : "text-muted-foreground"}`}>
                 {category.planned > 0 ? Math.round((category.actual / category.planned) * 100) : 0}%
               </span>

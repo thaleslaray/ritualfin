@@ -14,14 +14,14 @@ import {
 import { Button } from "@/components/ui/button";
 
 const categories = [
-  { id: "Moradia", label: "Moradia", icon: Home },
-  { id: "Alimentação", label: "Alimentação", icon: Utensils },
-  { id: "Transporte", label: "Transporte", icon: Car },
-  { id: "Saúde", label: "Saúde", icon: Heart },
-  { id: "Vestuário", label: "Vestuário", icon: ShoppingBag },
-  { id: "Lazer", label: "Lazer", icon: Plane },
-  { id: "Educação", label: "Educação", icon: Smartphone },
-  { id: "Outros", label: "Outros", icon: MoreHorizontal },
+  { id: "Moradia", label: "Moradia", icon: Home, color: "#007AFF" },
+  { id: "Alimentação", label: "Alimentação", icon: Utensils, color: "#FF9500" },
+  { id: "Transporte", label: "Transporte", icon: Car, color: "#34C759" },
+  { id: "Saúde", label: "Saúde", icon: Heart, color: "#FF2D55" },
+  { id: "Vestuário", label: "Vestuário", icon: ShoppingBag, color: "#AF52DE" },
+  { id: "Lazer", label: "Lazer", icon: Plane, color: "#5AC8FA" },
+  { id: "Educação", label: "Educação", icon: Smartphone, color: "#FFCC00" },
+  { id: "Outros", label: "Outros", icon: MoreHorizontal, color: "#8E8E93" },
 ];
 
 interface CategoryPopupProps {
@@ -96,15 +96,18 @@ export const CategoryPopup = ({ isOpen, onClose, onSelect, transaction }: Catego
             {categories.map((category, index) => (
               <motion.button
                 key={category.id}
-                className="flex items-center gap-3 p-4 rounded-2xl bg-muted hover:bg-foreground hover:text-background transition-all duration-300 text-left"
+                className="flex items-center gap-3 p-4 rounded-2xl bg-muted hover:bg-foreground hover:text-background transition-all duration-300 text-left group"
                 onClick={() => onSelect(category.id)}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.03, duration: 0.3 }}
                 whileTap={{ scale: 0.98 }}
               >
-                <div className="w-10 h-10 rounded-xl bg-background/10 flex items-center justify-center">
-                  <category.icon className="w-5 h-5" />
+                <div 
+                  className="w-10 h-10 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: category.color }}
+                >
+                  <category.icon className="w-5 h-5 text-white" />
                 </div>
                 <span className="font-medium text-[15px]">{category.label}</span>
               </motion.button>
