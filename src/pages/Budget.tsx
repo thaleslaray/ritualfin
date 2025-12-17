@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { 
   Copy, 
   Check, 
@@ -45,6 +45,7 @@ import { ptBR } from "date-fns/locale";
 import { EditableBillRow } from "@/components/budget/EditableBillRow";
 import { CategoryBudgetInput } from "@/components/budget/CategoryBudgetInput";
 import { EditableCardRow } from "@/components/budget/EditableCardRow";
+import confetti from "canvas-confetti";
 
 const Budget = () => {
   const [step, setStep] = useState(1);
@@ -128,10 +129,38 @@ const Budget = () => {
     }
   };
 
+  const triggerConfetti = useCallback(() => {
+    const duration = 3000;
+    const end = Date.now() + duration;
+
+    const frame = () => {
+      confetti({
+        particleCount: 3,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0, y: 0.7 },
+        colors: ['#0F4C81', '#17A589', '#F5C156'],
+      });
+      confetti({
+        particleCount: 3,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1, y: 0.7 },
+        colors: ['#0F4C81', '#17A589', '#F5C156'],
+      });
+
+      if (Date.now() < end) {
+        requestAnimationFrame(frame);
+      }
+    };
+    frame();
+  }, []);
+
   const handleLock = async () => {
     if (!currentMonth) return;
     try {
       await closeMonth.mutateAsync(currentMonth.id);
+      triggerConfetti();
       toast.success("Mês fechado com sucesso! 🎉", {
         description: "O orçamento está agora travado. Alterações serão marcadas.",
       });
