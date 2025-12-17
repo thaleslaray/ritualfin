@@ -9,6 +9,7 @@ interface EditableBillRowProps {
   bill: RecurringBill;
   index: number;
   isLocked: boolean;
+  isEditingLocked?: boolean;
   onUpdate: (id: string, updates: Partial<RecurringBill>) => void;
   onDelete: (id: string) => void;
   isUpdating?: boolean;
@@ -18,10 +19,12 @@ export function EditableBillRow({
   bill, 
   index, 
   isLocked, 
+  isEditingLocked = false,
   onUpdate, 
   onDelete,
   isUpdating 
 }: EditableBillRowProps) {
+  const isDisabled = isLocked && !isEditingLocked;
   // Local state for smooth typing
   const [name, setName] = useState(bill.name);
   const [amount, setAmount] = useState(bill.amount.toString());
@@ -64,7 +67,7 @@ export function EditableBillRow({
       <Input
         value={name}
         className="flex-1 bg-transparent border-0 font-medium"
-        disabled={isLocked}
+        disabled={isDisabled}
         onChange={(e) => setName(e.target.value)}
         onBlur={handleBlurName}
       />
@@ -74,7 +77,7 @@ export function EditableBillRow({
           type="number"
           value={amount}
           className="w-24 bg-card border-border"
-          disabled={isLocked}
+          disabled={isDisabled}
           onChange={(e) => setAmount(e.target.value)}
           onBlur={handleBlurAmount}
         />
@@ -85,7 +88,7 @@ export function EditableBillRow({
           type="number"
           value={dueDay}
           className="w-16 bg-card border-border"
-          disabled={isLocked}
+          disabled={isDisabled}
           onChange={(e) => setDueDay(e.target.value)}
           onBlur={handleBlurDueDay}
         />
@@ -93,7 +96,7 @@ export function EditableBillRow({
       <Button 
         variant="ghost" 
         size="icon" 
-        disabled={isLocked || isUpdating}
+        disabled={isDisabled || isUpdating}
         onClick={() => onDelete(bill.id)}
       >
         {isUpdating ? (
