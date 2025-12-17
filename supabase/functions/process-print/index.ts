@@ -215,6 +215,23 @@ Regras:
     
     console.log("Gemini response received, parsing...");
 
+    const isRecord = (value: unknown): value is Record<string, unknown> => {
+      return typeof value === "object" && value !== null;
+    };
+
+    const asString = (value: unknown): string | null => {
+      return typeof value === "string" ? value : null;
+    };
+
+    const asNumberLike = (value: unknown): number | null => {
+      if (typeof value === "number" && Number.isFinite(value)) return value;
+      if (typeof value === "string") {
+        const n = Number.parseFloat(value);
+        return Number.isFinite(n) ? n : null;
+      }
+      return null;
+    };
+
     // Parse the JSON response from Gemini
     let extractedTransactions: ExtractedTransaction[] = [];
     try {
@@ -222,17 +239,27 @@ Regras:
       const jsonMatch = responseContent.match(/```(?:json)?\s*([\s\S]*?)```/) || 
                         responseContent.match(/\{[\s\S]*\}/);
       const jsonStr = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : responseContent;
-      const parsed = JSON.parse(jsonStr.trim());
-      
-      if (parsed.transactions && Array.isArray(parsed.transactions)) {
+      const parsed: unknown = JSON.parse(jsonStr.trim());
+
+      if (isRecord(parsed) && Array.isArray(parsed.transactions)) {
         extractedTransactions = parsed.transactions
-          .filter((t: any) => t.date && t.merchant && t.amount)
-          .map((t: any) => ({
-            date: t.date,
-            merchant: t.merchant,
-            merchantNormalized: normalizeMerchant(t.merchant),
-            amount: Math.abs(parseFloat(t.amount)),
-          }));
+          .map((item): ExtractedTransaction | null => {
+            if (!isRecord(item)) return null;
+
+            const date = asString(item.date);
+            const merchant = asString(item.merchant);
+            const amountLike = asNumberLike(item.amount);
+
+            if (!date || !merchant || amountLike === null) return null;
+
+            return {
+              date,
+              merchant,
+              merchantNormalized: normalizeMerchant(merchant),
+              amount: Math.abs(amountLike),
+            };
+          })
+          .filter((t): t is ExtractedTransaction => t !== null);
       }
     } catch (parseError) {
       console.error("Error parsing Gemini response:", parseError);

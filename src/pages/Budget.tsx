@@ -98,7 +98,12 @@ const Budget = () => {
     try {
       await createMonth.mutateAsync(currentYearMonth);
       setStep(2);
-    } catch (error) {}
+    } catch (error) {
+      console.error("Erro ao criar mês:", error);
+      toast.error("Não foi possível criar o mês", {
+        description: "Tente novamente em instantes.",
+      });
+    }
   };
 
   const handleClone = async () => {
@@ -112,7 +117,12 @@ const Budget = () => {
         targetYearMonth: currentYearMonth 
       });
       setStep(2);
-    } catch (error) {}
+    } catch (error) {
+      console.error("Erro ao clonar mês:", error);
+      toast.error("Não foi possível clonar o mês", {
+        description: "Tente novamente em instantes.",
+      });
+    }
   };
 
   const triggerConfetti = useCallback(() => {
@@ -148,7 +158,12 @@ const Budget = () => {
       toast.success("Mês fechado!", {
         description: "O orçamento está agora travado.",
       });
-    } catch (error) {}
+    } catch (error) {
+      console.error("Erro ao fechar mês:", error);
+      toast.error("Não foi possível fechar o mês", {
+        description: "Verifique sua conexão e tente novamente.",
+      });
+    }
   };
 
   const handleUnlock = () => {
