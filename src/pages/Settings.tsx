@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { 
   User, 
@@ -8,7 +9,12 @@ import {
   HelpCircle,
   ChevronRight,
   LogOut,
-  Users
+  Users,
+  Database,
+  Copy,
+  Eye,
+  EyeOff,
+  Loader2
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -16,6 +22,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 type SettingsItem = {
@@ -34,7 +41,37 @@ const Settings = () => {
   const { profile, user, signOut } = useAuth();
   const navigate = useNavigate();
 
+  const [dbUrl, setDbUrl] = useState<string | null>(null);
+  const [showDbUrl, setShowDbUrl] = useState(false);
+  const [loadingDbUrl, setLoadingDbUrl] = useState(false);
+
   const comingSoon = () => toast.info("Em breve!");
+
+  const fetchDbUrl = async () => {
+    setLoadingDbUrl(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('get-db-url');
+      if (error) throw error;
+      if (data?.db_url) {
+        setDbUrl(data.db_url);
+        setShowDbUrl(true);
+      } else {
+        toast.error("DB URL não disponível");
+      }
+    } catch (err) {
+      console.error('Erro ao buscar DB URL:', err);
+      toast.error("Erro ao buscar DB URL");
+    } finally {
+      setLoadingDbUrl(false);
+    }
+  };
+
+  const copyDbUrl = () => {
+    if (dbUrl) {
+      navigator.clipboard.writeText(dbUrl);
+      toast.success("DB URL copiada!");
+    }
+  };
 
   const settingsGroups: SettingsGroup[] = [
     {
@@ -164,6 +201,79 @@ const Settings = () => {
             </Card>
           </motion.div>
         ))}
+
+        {/* Developer Tools */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+        >
+          <p className="text-footnote font-semibold text-muted-foreground tracking-wider mb-3 px-1">
+            DESENVOLVEDOR
+          </p>
+          <Card>
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
+                  <Database className="w-5 h-5 text-foreground" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-body text-foreground font-medium">Database URL</p>
+                  <p className="text-caption text-muted-foreground">Connection string para migração</p>
+                </div>
+              </div>
+              
+              {dbUrl && showDbUrl ? (
+                <div className="space-y-2">
+                  <div className="p-3 bg-muted rounded-lg">
+                    <code className="text-xs text-foreground break-all">{dbUrl}</code>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1 gap-2"
+                      onClick={copyDbUrl}
+                    >
+                      <Copy className="w-4 h-4" />
+                      Copiar
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setShowDbUrl(false)}
+                    >
+                      <EyeOff className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ) : dbUrl ? (
+                <Button 
+                  variant="outline" 
+                  className="w-full gap-2"
+                  onClick={() => setShowDbUrl(true)}
+                >
+                  <Eye className="w-4 h-4" />
+                  Mostrar URL
+                </Button>
+              ) : (
+                <Button 
+                  variant="outline" 
+                  className="w-full gap-2"
+                  onClick={fetchDbUrl}
+                  disabled={loadingDbUrl}
+                >
+                  {loadingDbUrl ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Database className="w-4 h-4" />
+                  )}
+                  {loadingDbUrl ? "Carregando..." : "Obter DB URL"}
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
 
         {/* Logout */}
         <motion.div
