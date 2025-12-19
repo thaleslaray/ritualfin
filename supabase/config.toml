@@ -5,6 +5,3 @@ verify_jwt = true
 
 [functions.process-ofx]
 verify_jwt = true
-
-[functions.teste]
-verify_jwt = false
