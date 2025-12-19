@@ -1,28 +1,28 @@
 import { motion } from "framer-motion";
 import { 
-  ShoppingBag, 
-  Home, 
-  Car, 
-  Utensils, 
-  Heart, 
-  Smartphone, 
-  Plane, 
-  MoreHorizontal,
   X,
   ArrowLeftRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useActiveCategories } from "@/hooks/useCategories";
 
-const categories = [
-  { id: "Moradia", label: "Moradia", icon: Home, color: "#007AFF" },
-  { id: "Alimentação", label: "Alimentação", icon: Utensils, color: "#FF9500" },
-  { id: "Transporte", label: "Transporte", icon: Car, color: "#34C759" },
-  { id: "Saúde", label: "Saúde", icon: Heart, color: "#FF2D55" },
-  { id: "Vestuário", label: "Vestuário", icon: ShoppingBag, color: "#AF52DE" },
-  { id: "Lazer", label: "Lazer", icon: Plane, color: "#5AC8FA" },
-  { id: "Educação", label: "Educação", icon: Smartphone, color: "#FFCC00" },
-  { id: "Outros", label: "Outros", icon: MoreHorizontal, color: "#8E8E93" },
+const COLOR_PALETTE = [
+  "#007AFF",
+  "#FF9500",
+  "#34C759",
+  "#FF2D55",
+  "#AF52DE",
+  "#5AC8FA",
+  "#FFCC00",
+  "#8E8E93",
 ];
+
+function colorFromKey(key: string): string {
+  // hash simples e determinístico
+  let h = 0;
+  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
+  return COLOR_PALETTE[h % COLOR_PALETTE.length];
+}
 
 interface CategoryPopupProps {
   isOpen: boolean;
@@ -36,6 +36,8 @@ interface CategoryPopupProps {
 }
 
 export const CategoryPopup = ({ isOpen, onClose, onSelect, transaction }: CategoryPopupProps) => {
+  const { data: categories = [], isLoading } = useActiveCategories();
+
   if (!isOpen) return null;
 
   return (
@@ -92,27 +94,37 @@ export const CategoryPopup = ({ isOpen, onClose, onSelect, transaction }: Catego
 
         {/* Categories Grid */}
         <div className="px-6 pb-6">
-          <div className="grid grid-cols-2 gap-3">
-            {categories.map((category, index) => (
-              <motion.button
-                key={category.id}
-                className="flex items-center gap-3 p-4 rounded-2xl bg-muted hover:bg-foreground hover:text-background transition-all duration-300 text-left group"
-                onClick={() => onSelect(category.id)}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.03, duration: 0.3 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <div 
-                  className="w-10 h-10 rounded-full flex items-center justify-center"
-                  style={{ backgroundColor: category.color }}
+          {isLoading ? (
+            <p className="text-caption text-muted-foreground">Carregando categorias…</p>
+          ) : categories.length === 0 ? (
+            <p className="text-caption text-muted-foreground">
+              Nenhuma categoria ativa. Vá em Configurações → Categorias para criar.
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              {categories.map((category, index) => (
+                <motion.button
+                  key={category.id}
+                  className="flex items-center gap-3 p-4 rounded-2xl bg-muted hover:bg-foreground hover:text-background transition-all duration-300 text-left group"
+                  onClick={() => onSelect(category.key)}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.03, duration: 0.3 }}
+                  whileTap={{ scale: 0.98 }}
                 >
-                  <category.icon className="w-5 h-5 text-white" />
-                </div>
-                <span className="font-medium text-[15px]">{category.label}</span>
-              </motion.button>
-            ))}
-          </div>
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center"
+                    style={{ backgroundColor: colorFromKey(category.key) }}
+                  >
+                    <span className="text-white font-semibold">
+                      {category.display_name.slice(0, 1).toUpperCase()}
+                    </span>
+                  </div>
+                  <span className="font-medium text-[15px]">{category.display_name}</span>
+                </motion.button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Footer - Internal transfer */}
@@ -130,9 +142,3 @@ export const CategoryPopup = ({ isOpen, onClose, onSelect, transaction }: Catego
     </motion.div>
   );
 };
-
-export const getCategoryInfo = (id: string) => {
-  return categories.find(c => c.id === id) || categories[7];
-};
-
-export { categories };

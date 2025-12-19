@@ -15,12 +15,14 @@ import { TransactionList, Transaction as TransactionUI } from "@/components/tran
 import { CategoryPopup } from "@/components/transactions/CategoryPopup";
 import { toast } from "sonner";
 import { useCurrentMonth } from "@/hooks/useMonths";
+import { useCategories } from "@/hooks/useCategories";
 import { 
   useTransactions, 
   usePendingTransactions, 
   useCategorizeTransaction,
   Transaction 
 } from "@/hooks/useTransactions";
+import { getCategoryDisplayName } from "@/utils/categoryDisplay";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -28,6 +30,7 @@ const Transactions = () => {
   const { data: currentMonth, isLoading: isLoadingMonth } = useCurrentMonth();
   const { data: transactions = [], isLoading: isLoadingTransactions } = useTransactions(currentMonth?.id);
   const { data: pendingTransactions = [] } = usePendingTransactions(currentMonth?.id);
+  const { data: categories } = useCategories();
   const categorizeTransaction = useCategorizeTransaction();
   
   const [filter, setFilter] = useState<"all" | "pending">("all");
@@ -80,10 +83,11 @@ const Transactions = () => {
       },
       {
         onSuccess: () => {
+          const label = isInternalTransfer ? "Movimentação interna" : getCategoryDisplayName(categoryId, categories);
           toast.success("Categorizado!", {
             description: isInternalTransfer 
               ? "Movimentação interna" 
-              : categoryId,
+              : label,
             action: {
               label: "Desfazer",
               onClick: () => {
@@ -228,6 +232,7 @@ const Transactions = () => {
             <TransactionList
               transactions={filteredTransactions}
               onTransactionClick={handleTransactionClick}
+              categories={categories}
             />
           )}
         </motion.div>

@@ -13,8 +13,9 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { categories } from "@/components/transactions/CategoryPopup";
 import { toast } from "sonner";
+import { useCategories } from "@/hooks/useCategories";
+import { getCategoryDisplayName } from "@/utils/categoryDisplay";
 import { 
   useCurrentMonth, 
   useMonths, 
@@ -55,6 +56,7 @@ const Budget = () => {
   const { data: currentMonth, isLoading: monthLoading } = useCurrentMonth();
   const { data: allMonths } = useMonths();
   const { data: categoryBudgets, isLoading: budgetsLoading } = useCategoryBudgets(currentMonth?.id);
+  const { data: categories } = useCategories();
   const { data: recurringBills, isLoading: billsLoading } = useRecurringBills();
   const { data: cards, isLoading: cardsLoading } = useCards();
 
@@ -206,10 +208,6 @@ const Budget = () => {
     });
     setNewCardName("");
     setNewCardLimit("");
-  };
-
-  const getCategoryInfo = (id: string) => {
-    return categories.find(c => c.id === id);
   };
 
   const getPreviousMonthName = () => {
@@ -448,19 +446,18 @@ const Budget = () => {
                 <CardContent>
                   <div className="grid sm:grid-cols-2 gap-3">
                     {categoryBudgets?.map((cat, index) => {
-                      const info = getCategoryInfo(cat.category);
-                      if (!info) return null;
-                      
+                      const label = getCategoryDisplayName(cat.category, categories);
+
                       return (
                         <CategoryBudgetInput
                           key={cat.id}
                           budgetId={cat.id}
-                          category={cat.category}
+                          categoryKeyOrLegacy={cat.category}
+                          categoryLabel={label}
                           plannedAmount={cat.planned_amount}
                           isLocked={isLocked}
                           isEditingLocked={isEditingLocked}
                           index={index}
-                          categoryInfo={info}
                           onUpdate={handleUpdateCategoryBudget}
                         />
                       );

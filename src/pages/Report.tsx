@@ -15,21 +15,23 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { BudgetComparison } from "@/components/budget/BudgetComparison";
-import { categories as categoryList } from "@/components/transactions/CategoryPopup";
 import { useState } from "react";
 import { useCurrentMonth, useCategoryBudgets } from "@/hooks/useMonths";
 import { useTransactionsSummary, useTransactionsByCategory, useTransactions } from "@/hooks/useTransactions";
 import { useCardUsage } from "@/hooks/useCardUsage";
+import { useCategories } from "@/hooks/useCategories";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { exportTransactionsToCsv } from "@/utils/exportCsv";
 import { toast } from "sonner";
+import { getCategoryDisplayName } from "@/utils/categoryDisplay";
 
 const Report = () => {
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   
   const { data: currentMonth, isLoading: isLoadingMonth } = useCurrentMonth();
   const { data: categoryBudgets = [], isLoading: isLoadingBudgets } = useCategoryBudgets(currentMonth?.id);
+  const { data: categoriesLookup } = useCategories();
   const { data: allTransactions = [] } = useTransactions(currentMonth?.id);
   const summary = useTransactionsSummary(currentMonth?.id);
   const { data: categoryTransactions = [], isLoading: isLoadingCategoryTx } = useTransactionsByCategory(
@@ -63,10 +65,6 @@ const Report = () => {
   const savings = totalPlanned - totalActual;
   const savingsPercentage = totalPlanned > 0 ? Math.round((savings / totalPlanned) * 100) : 0;
   const isPositive = savings >= 0;
-
-  const getCategoryInfo = (id: string) => {
-    return categoryList.find(c => c.id === id);
-  };
 
   const formatMonthName = (yearMonth: string) => {
     const [year, month] = yearMonth.split('-');
@@ -197,7 +195,7 @@ const Report = () => {
             className="text-caption text-destructive"
           >
             {overBudgetCategories.length === 1 
-              ? `${getCategoryInfo(overBudgetCategories[0])?.label} está acima do orçamento`
+              ? `${getCategoryDisplayName(overBudgetCategories[0], categoriesLookup)} está acima do orçamento`
               : `${overBudgetCategories.length} categorias acima do orçamento`
             }
           </motion.p>
@@ -215,7 +213,7 @@ const Report = () => {
                 <CardTitle>Por Categoria</CardTitle>
               </CardHeader>
               <CardContent>
-                <BudgetComparison categories={categories} />
+                <BudgetComparison categories={categories} categoryLookup={categoriesLookup} />
               </CardContent>
             </Card>
           </motion.div>
@@ -282,8 +280,7 @@ const Report = () => {
               </CardHeader>
               <CardContent className="space-y-2">
                 {categories.map((category, index) => {
-                  const info = getCategoryInfo(category.id);
-                  if (!info) return null;
+                  const label = getCategoryDisplayName(category.id, categoriesLookup);
                   
                   const isOverBudget = category.actual > category.planned;
                   const percentage = category.planned > 0 
@@ -304,7 +301,7 @@ const Report = () => {
                       >
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-body text-foreground font-medium">{info.label}</p>
+                            <p className="text-body text-foreground font-medium">{label}</p>
                             <p className="text-caption text-muted-foreground">
                               R$ {category.actual.toLocaleString('pt-BR')} de R$ {category.planned.toLocaleString('pt-BR')}
                             </p>

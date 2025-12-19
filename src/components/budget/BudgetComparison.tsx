@@ -1,6 +1,24 @@
 import { motion } from "framer-motion";
-import { getCategoryInfo } from "@/components/transactions/CategoryPopup";
 import { AlertTriangle } from "lucide-react";
+import type { Category } from "@/hooks/useCategories";
+import { getCategoryDisplayName } from "@/utils/categoryDisplay";
+
+const COLOR_PALETTE = [
+  "#007AFF",
+  "#FF9500",
+  "#34C759",
+  "#FF2D55",
+  "#AF52DE",
+  "#5AC8FA",
+  "#FFCC00",
+  "#8E8E93",
+];
+
+function colorFromKey(key: string): string {
+  let h = 0;
+  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
+  return COLOR_PALETTE[h % COLOR_PALETTE.length];
+}
 
 interface BudgetCategory {
   id: string;
@@ -11,13 +29,14 @@ interface BudgetCategory {
 interface BudgetComparisonProps {
   categories: BudgetCategory[];
   showLabels?: boolean;
+  categoryLookup?: Category[];
 }
 
-export const BudgetComparison = ({ categories }: BudgetComparisonProps) => {
+export const BudgetComparison = ({ categories, categoryLookup }: BudgetComparisonProps) => {
   return (
     <div className="divide-y divide-border">
       {categories.map((category, index) => {
-        const info = getCategoryInfo(category.id);
+        const label = getCategoryDisplayName(category.id, categoryLookup);
         const percentage = category.planned > 0 
           ? Math.round((category.actual / category.planned) * 100) 
           : 0;
@@ -36,12 +55,14 @@ export const BudgetComparison = ({ categories }: BudgetComparisonProps) => {
             <div className="flex items-center gap-3 mb-3">
               <div 
                 className="w-8 h-8 rounded-full flex items-center justify-center"
-                style={{ backgroundColor: info.color }}
+                style={{ backgroundColor: colorFromKey(category.id) }}
               >
-                <info.icon className="w-4 h-4 text-white" />
+                <span className="text-white font-semibold">
+                  {label.slice(0, 1).toUpperCase()}
+                </span>
               </div>
               <p className="text-body text-foreground font-medium">
-                {info.label}
+                {label}
               </p>
             </div>
 
@@ -77,11 +98,17 @@ export const BudgetComparison = ({ categories }: BudgetComparisonProps) => {
 };
 
 // Mini version for dashboard
-export const BudgetComparisonMini = ({ categories }: { categories: BudgetCategory[] }) => {
+export const BudgetComparisonMini = ({
+  categories,
+  categoryLookup,
+}: {
+  categories: BudgetCategory[];
+  categoryLookup?: Category[];
+}) => {
   return (
     <div className="space-y-4">
       {categories.slice(0, 4).map((category, index) => {
-        const info = getCategoryInfo(category.id);
+        const label = getCategoryDisplayName(category.id, categoryLookup);
         const percentage = category.planned > 0 
           ? Math.min((category.actual / category.planned) * 100, 100)
           : 0;
@@ -98,11 +125,13 @@ export const BudgetComparisonMini = ({ categories }: { categories: BudgetCategor
               <div className="flex items-center gap-2">
                 <div 
                   className="w-5 h-5 rounded-full flex items-center justify-center"
-                  style={{ backgroundColor: info.color }}
+                  style={{ backgroundColor: colorFromKey(category.id) }}
                 >
-                  <info.icon className="w-3 h-3 text-white" />
+                  <span className="text-white text-[10px] font-semibold">
+                    {label.slice(0, 1).toUpperCase()}
+                  </span>
                 </div>
-                <span className="text-caption text-foreground font-medium">{info.label}</span>
+                <span className="text-caption text-foreground font-medium">{label}</span>
               </div>
               <span className={`text-footnote font-medium ${isOverBudget ? "text-destructive" : "text-muted-foreground"}`}>
                 {category.planned > 0 ? Math.round((category.actual / category.planned) * 100) : 0}%

@@ -48,7 +48,7 @@ const Settings = () => {
       title: "FINANCEIRO",
       items: [
         { icon: CreditCard, label: "Cartões", description: "Gerenciar cartões", action: comingSoon },
-        { icon: Tag, label: "Categorias", description: "Personalizar", action: comingSoon },
+        { icon: Tag, label: "Categorias", description: "Personalizar", action: () => navigate("/categories") },
       ],
     },
     {

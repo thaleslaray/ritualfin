@@ -4,26 +4,40 @@ import { Input } from "@/components/ui/input";
 
 interface CategoryBudgetInputProps {
   budgetId: string;
-  category: string;
+  categoryKeyOrLegacy: string;
+  categoryLabel: string;
   plannedAmount: number;
   isLocked: boolean;
   isEditingLocked: boolean;
   index: number;
-  categoryInfo: {
-    icon: React.ComponentType<{ className?: string }>;
-    label: string;
-    color: string;
-  };
   onUpdate: (id: string, amount: number) => void;
+}
+
+const COLOR_PALETTE = [
+  "#007AFF",
+  "#FF9500",
+  "#34C759",
+  "#FF2D55",
+  "#AF52DE",
+  "#5AC8FA",
+  "#FFCC00",
+  "#8E8E93",
+];
+
+function colorFromKey(key: string): string {
+  let h = 0;
+  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
+  return COLOR_PALETTE[h % COLOR_PALETTE.length];
 }
 
 export function CategoryBudgetInput({
   budgetId,
+  categoryKeyOrLegacy,
+  categoryLabel,
   plannedAmount,
   isLocked,
   isEditingLocked,
   index,
-  categoryInfo,
   onUpdate,
 }: CategoryBudgetInputProps) {
   // Local state for smooth typing
@@ -47,7 +61,6 @@ export function CategoryBudgetInput({
     }
   };
 
-  const Icon = categoryInfo.icon;
   const isDisabled = isLocked && !isEditingLocked;
 
   return (
@@ -59,12 +72,14 @@ export function CategoryBudgetInput({
     >
       <div 
         className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
-        style={{ backgroundColor: categoryInfo.color }}
+        style={{ backgroundColor: colorFromKey(categoryKeyOrLegacy) }}
       >
-        <Icon className="w-5 h-5 text-white" />
+        <span className="text-white font-semibold">
+          {categoryLabel.slice(0, 1).toUpperCase()}
+        </span>
       </div>
       <span className="flex-1 font-medium text-foreground">
-        {categoryInfo.label}
+        {categoryLabel}
       </span>
       <div className="flex items-center gap-2">
         <span className="text-sm text-muted-foreground">R$</span>

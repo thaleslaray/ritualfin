@@ -1,0 +1,163 @@
+openapi: 3.0.3
+info:
+  title: Ritual Financeiro - Categories API (contract)
+  version: 0.1.0
+  description: |
+    Contrato lógico para gerenciamento de categorias por casal.
+    Observação: a implementação atual do app consome Supabase (PostgREST) diretamente.
+servers:
+  - url: https://{project}.supabase.co
+    variables:
+      project:
+        default: vhdjckcfchurjidvpqmb
+paths:
+  /categories:
+    get:
+      summary: Listar categorias do casal
+      responses:
+        '200':
+          description: Lista de categorias
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+    post:
+      summary: Criar categoria
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryCreateRequest'
+      responses:
+        '201':
+          description: Categoria criada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '409':
+          description: Conflito (nome/key duplicados)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /categories/{id}:
+    patch:
+      summary: Atualizar categoria (display_name, is_active)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryUpdateRequest'
+      responses:
+        '200':
+          description: Categoria atualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+    delete:
+      summary: Excluir categoria (somente se não usada)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Excluída
+        '409':
+          description: Categoria em uso (bloquear exclusão)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /categories/reorder:
+    post:
+      summary: Reordenar categorias
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryReorderRequest'
+      responses:
+        '204':
+          description: Ordem atualizada
+components:
+  schemas:
+    Category:
+      type: object
+      required: [id, couple_id, key, display_name, display_name_normalized, is_active, sort_order, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        couple_id:
+          type: string
+          format: uuid
+        key:
+          type: string
+          description: Slug estável e imutável
+          example: alimentacao
+        display_name:
+          type: string
+          example: Alimentação
+        display_name_normalized:
+          type: string
+          example: alimentacao
+        is_active:
+          type: boolean
+        sort_order:
+          type: integer
+          example: 20
+        is_default:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CategoryCreateRequest:
+      type: object
+      required: [display_name]
+      properties:
+        display_name:
+          type: string
+          example: Pets
+    CategoryUpdateRequest:
+      type: object
+      properties:
+        display_name:
+          type: string
+        is_active:
+          type: boolean
+    CategoryReorderRequest:
+      type: object
+      required: [ordered_ids]
+      properties:
+        ordered_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+    Error:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string

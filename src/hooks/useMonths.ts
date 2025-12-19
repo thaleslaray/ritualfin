@@ -23,16 +23,35 @@ export interface CategoryBudget {
   updated_at: string;
 }
 
-const DEFAULT_CATEGORIES = [
-  'Moradia',
-  'Alimentação',
-  'Transporte',
-  'Saúde',
-  'Lazer',
-  'Educação',
-  'Vestuário',
-  'Outros',
+const FALLBACK_CATEGORY_KEYS = [
+  'moradia',
+  'alimentacao',
+  'transporte',
+  'saude',
+  'lazer',
+  'educacao',
+  'vestuario',
+  'outros',
 ];
+
+async function getActiveCategoryKeysOrFallback(coupleId: string): Promise<string[]> {
+  try {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('key')
+      .eq('couple_id', coupleId)
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true });
+
+    if (error) throw error;
+
+    const keys = (data ?? []).map((d) => d.key as string).filter(Boolean);
+    return keys.length > 0 ? keys : FALLBACK_CATEGORY_KEYS;
+  } catch {
+    // Se a migration de categories ainda não foi aplicada no ambiente, mantém o app funcional.
+    return FALLBACK_CATEGORY_KEYS;
+  }
+}
 
 export function useMonths() {
   const { coupleId } = useAuth();
@@ -113,8 +132,9 @@ export function useCreateMonth() {
 
       if (monthError) throw monthError;
 
-      // Create default category budgets
-      const categoryBudgets = DEFAULT_CATEGORIES.map(category => ({
+      // Create category budgets (based on active categories)
+      const activeCategoryKeys = await getActiveCategoryKeysOrFallback(coupleId);
+      const categoryBudgets = activeCategoryKeys.map((category) => ({
         month_id: month.id,
         category,
         planned_amount: 0,
