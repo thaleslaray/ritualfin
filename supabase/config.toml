@@ -5,6 +5,3 @@ verify_jwt = true
 
 [functions.process-ofx]
 verify_jwt = true
-
-[functions.get-db-url]
-verify_jwt = true
