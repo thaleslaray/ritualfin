@@ -1,10 +1,7 @@
-project_id = "cbwadizukdliwwnmmqci"
+project_id = "vhdjckcfchurjidvpqmb"
 
 [functions.process-print]
 verify_jwt = true
 
 [functions.process-ofx]
 verify_jwt = true
-
-[functions.teste]
-verify_jwt = false
