@@ -96,6 +96,53 @@ export type Database = {
           },
         ]
       }
+      categories: {
+        Row: {
+          couple_id: string
+          created_at: string
+          display_name: string
+          display_name_normalized: string
+          id: string
+          is_active: boolean
+          is_default: boolean
+          key: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          couple_id: string
+          created_at?: string
+          display_name: string
+          display_name_normalized: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          key: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          couple_id?: string
+          created_at?: string
+          display_name?: string
+          display_name_normalized?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          key?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categories_couple_id_fkey"
+            columns: ["couple_id"]
+            isOneToOne: false
+            referencedRelation: "couples"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       category_budgets: {
         Row: {
           category: string
